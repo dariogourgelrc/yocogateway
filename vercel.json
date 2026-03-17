@@ -1,0 +1,19 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/remarketing",
+      "schedule": "*/10 * * * *"
+    }
+  ],
+  "functions": {
+    "src/app/api/webhooks/yoco/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/checkout/*/route.ts": {
+      "maxDuration": 15
+    },
+    "src/app/api/cron/remarketing/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --no-import-alias --use-npm)",
+      "Bash(npx next build)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(echo \"EXIT: $?\")",
+      "WebFetch(domain:developer.yoco.com)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\dario\\Documents\\Yoco Gateway\\src\\app\\checkout\\[slug]",
+      "c:\\Users\\dario\\Documents\\Yoco Gateway\\src\\app\\admin\\[productId]",
+      "c:\\Users\\dario\\Documents\\Yoco Gateway\\src\\app\\api\\products\\[id]",
+      "c:\\Users\\dario\\.claude\\plans"
+    ]
+  }
+}
