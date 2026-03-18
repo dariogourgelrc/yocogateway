@@ -5,6 +5,7 @@ import { getProductTrackers } from "@/lib/db/product-trackers";
 import { fireServerTrackers } from "@/lib/trackers/server-registry";
 import { sendConfirmationEmail } from "@/lib/notifications/email";
 import { sendWhatsAppConfirmation } from "@/lib/notifications/whatsapp";
+import { sendSaleNotification } from "@/lib/notifications/sale-alert";
 
 /**
  * Yoco always redirects here after successful payment.
@@ -40,6 +41,7 @@ export async function GET(request: NextRequest) {
       await Promise.allSettled([
         sendConfirmationEmail(order, product),
         sendWhatsAppConfirmation(order, product),
+        sendSaleNotification(order, product),
       ]).catch((err) =>
         console.error("payment-callback: notification failed:", err)
       );
