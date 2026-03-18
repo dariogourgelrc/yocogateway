@@ -113,6 +113,11 @@ async function sendToUtmify(
   apiToken: string,
   payload: Awaited<ReturnType<typeof buildPayload>>
 ) {
+  console.log(
+    `UTMify → sending status="${payload.status}" orderId="${payload.orderId}"`,
+    JSON.stringify(payload)
+  );
+
   const res = await fetch(UTMIFY_ENDPOINT, {
     method: "POST",
     headers: {
@@ -122,9 +127,11 @@ async function sendToUtmify(
     body: JSON.stringify(payload),
   });
 
+  const body = await res.text();
   if (!res.ok) {
-    const err = await res.text();
-    console.error(`UTMify error: ${res.status} ${err}`);
+    console.error(`UTMify error: ${res.status} ${body}`);
+  } else {
+    console.log(`UTMify ← ${res.status} ${body}`);
   }
 }
 

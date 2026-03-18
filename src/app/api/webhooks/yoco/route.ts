@@ -43,6 +43,13 @@ export async function POST(request: NextRequest) {
     const product = await getProductById(order.product_id);
     const trackers = await getProductTrackers(order.product_id);
 
+    console.log(
+      `Webhook: firing orderPaid for order ${order.id}, ` +
+      `trackers: ${trackers.length} total, ` +
+      `server: ${trackers.filter((t) => t.side === "server").map((t) => t.type).join(",") || "none"}, ` +
+      `order_items: ${order.order_items?.length ?? 0}`
+    );
+
     // Always fire server-side trackers (UTMify orderPaid) — even if success page
     // already marked as paid, because success page doesn't fire server trackers
     await fireServerTrackers("orderPaid", order, trackers).catch((err) =>
