@@ -9,12 +9,10 @@ export async function sendSaleNotification(order: Order, product: Product) {
 
   await fetch(`https://ntfy.sh/${topic}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      topic,
-      title: "New Sale! 💰",
-      message: `${product.name}\n${total} from ${order.buyer_name}`,
-      tags: ["money_with_wings"],
-    }),
+    headers: {
+      Title: "New Sale!",
+      Tags: "money_with_wings",
+    },
+    body: `from PaySA Online\nYou received a sale of ${total}`,
   });
 }
