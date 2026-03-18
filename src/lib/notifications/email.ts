@@ -2,6 +2,12 @@ import { Resend } from "resend";
 import type { OrderWithItems, Product } from "@/lib/supabase/types";
 import { formatCurrency } from "@/lib/utils/currency";
 
+function getDeliveryLink(product: Product): string | null {
+  if (!product.delivery_url) return null;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  return `${appUrl}/delivery/${product.slug}`;
+}
+
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY!);
 }
@@ -78,20 +84,23 @@ export async function sendConfirmationEmail(
             </div>
 
             ${
-              product.delivery_url
-                ? `
+              (() => {
+                const deliveryLink = getDeliveryLink(product);
+                return deliveryLink
+                  ? `
             <!-- Access Product -->
             <div style="text-align: center; margin: 28px 0;">
-              <a href="${product.delivery_url}"
+              <a href="${deliveryLink}"
                  style="display: inline-block; padding: 16px 40px; background-color: #10b981; color: #ffffff; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 700; letter-spacing: 0.3px;">
                 Access Your Product
               </a>
             </div>
             <p style="font-size: 13px; color: #9ca3af; text-align: center; margin: 0 0 24px; word-break: break-all;">
-              ${product.delivery_url}
+              ${deliveryLink}
             </p>
             `
-                : ""
+                  : "";
+              })()
             }
 
             <!-- Divider -->

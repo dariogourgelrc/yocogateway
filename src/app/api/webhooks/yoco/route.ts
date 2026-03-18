@@ -51,8 +51,8 @@ export async function POST(request: NextRequest) {
       console.error("Server tracker onOrderPaid failed:", err)
     );
 
-    // Send notifications (don't block the webhook response)
-    Promise.allSettled([
+    // Send notifications (must await in serverless to avoid early termination)
+    await Promise.allSettled([
       sendConfirmationEmail(order, product),
       sendWhatsAppConfirmation(order, product),
     ]).catch((err) => console.error("Notification error:", err));

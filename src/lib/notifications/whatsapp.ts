@@ -20,7 +20,7 @@ export async function sendWhatsAppConfirmation(
     ``,
     `Your purchase of *${product.name}* has been confirmed.`,
     product.delivery_url
-      ? `\nAccess your product here:\n${product.delivery_url}`
+      ? `\nAccess your product here:\n${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/delivery/${product.slug}`
       : "",
     ``,
     `Thank you for your purchase!`,

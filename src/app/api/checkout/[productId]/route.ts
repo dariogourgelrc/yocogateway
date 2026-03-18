@@ -161,8 +161,8 @@ export async function POST(
       order_items: orderItems,
     };
 
-    // Fire in background — don't block the checkout response
-    fireServerTrackers("orderCreated", orderWithItems, trackers).catch(
+    // Fire server trackers before responding (must await in serverless)
+    await fireServerTrackers("orderCreated", orderWithItems, trackers).catch(
       (err) => console.error("Server tracker onOrderCreated failed:", err)
     );
 
