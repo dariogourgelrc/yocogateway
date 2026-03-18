@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { getProductBySlug } from "@/lib/db/products";
-import { getOrderById, updateOrderStatus } from "@/lib/db/orders";
-import { sendConfirmationEmail } from "@/lib/notifications/email";
+import { getOrderById } from "@/lib/db/orders";
 import { SuccessContent } from "@/components/checkout/success-content";
 
 export const dynamic = "force-dynamic";
@@ -43,13 +42,8 @@ export default async function SuccessPage({
           eventId: (trackingParams?.event_id as string) || null,
         };
 
-        // Mark as paid and send email (idempotent — webhook may also do this)
-        if (order.status === "pending") {
-          await updateOrderStatus(order.id, "paid");
-          sendConfirmationEmail(order, product).catch((err) =>
-            console.error("Email send failed:", err)
-          );
-        }
+        // Order processing (paid, UTMify, email, WhatsApp) is handled
+        // by /api/payment-callback before redirecting here
       }
     } catch (err) {
       console.error("Success page order processing error:", err);

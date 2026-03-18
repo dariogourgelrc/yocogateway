@@ -136,11 +136,17 @@ export async function POST(
       })),
     ];
 
+    // Build the final destination after payment
+    const finalDestination = product.upsell_url || `${appUrl}/checkout/${product.slug}/success?order_id=${order.id}`;
+
+    // Always route through payment-callback to fire UTMify + notifications
+    const successUrl = `${appUrl}/api/payment-callback?order_id=${order.id}&redirect_to=${encodeURIComponent(finalDestination)}`;
+
     // Create Yoco payment session
     const yocoSession = await createYocoSession({
       amountInCents: total,
       currency: "ZAR", // Yoco only supports ZAR; NAD is pegged 1:1
-      successUrl: product.upsell_url || `${appUrl}/checkout/${product.slug}/success?order_id=${order.id}`,
+      successUrl,
       cancelUrl: backRedirectUrl || `${appUrl}/checkout/${product.slug}/cancel`,
       failureUrl: `${appUrl}/checkout/${product.slug}/cancel`,
       lineItems,
