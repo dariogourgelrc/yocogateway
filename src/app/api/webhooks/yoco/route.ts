@@ -34,28 +34,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    // Idempotency: already processed
-    if (order.status === "paid") {
-      return NextResponse.json({ received: true, already_processed: true });
+    // Update order status (idempotent — may already be "paid" from success page)
+    if (order.status !== "paid") {
+      await updateOrderStatus(order.id, "paid");
     }
-
-    // Update order status
-    await updateOrderStatus(order.id, "paid");
 
     // Fetch product and trackers for notifications + server tracking
     const product = await getProductById(order.product_id);
     const trackers = await getProductTrackers(order.product_id);
 
-    // Fire server-side trackers (orderPaid)
+    // Always fire server-side trackers (UTMify orderPaid) — even if success page
+    // already marked as paid, because success page doesn't fire server trackers
     await fireServerTrackers("orderPaid", order, trackers).catch((err) =>
       console.error("Server tracker onOrderPaid failed:", err)
     );
 
-    // Send notifications (must await in serverless to avoid early termination)
-    await Promise.allSettled([
-      sendConfirmationEmail(order, product),
-      sendWhatsAppConfirmation(order, product),
-    ]).catch((err) => console.error("Notification error:", err));
+    // Send notifications only if not already sent (first time marking paid)
+    if (order.status !== "paid") {
+      await Promise.allSettled([
+        sendConfirmationEmail(order, product),
+        sendWhatsAppConfirmation(order, product),
+      ]).catch((err) => console.error("Notification error:", err));
+    }
 
     return NextResponse.json({ received: true, order_id: order.id });
   } catch (err) {
