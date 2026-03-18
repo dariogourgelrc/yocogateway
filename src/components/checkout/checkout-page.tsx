@@ -163,8 +163,8 @@ export function CheckoutPage({ product, offerId, recoverData }: CheckoutPageProp
             <BuyerForm value={buyerInfo} onChange={setBuyerInfo} />
           </div>
 
-          {/* Order bumps */}
-          {product.order_bumps.length > 0 && (
+          {/* Order bumps — only shown after buyer fills in the form */}
+          {product.order_bumps.length > 0 && formValid && (
             <div className="border-b border-gray-100 px-5 py-4">
               <p className="mb-3 text-sm font-semibold text-gray-900">
                 Add to your order
