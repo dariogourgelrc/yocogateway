@@ -28,10 +28,15 @@ export default async function CheckoutPageRoute({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ recover?: string }>;
+  searchParams: Promise<{
+    recover?: string;
+    prefill_name?: string;
+    prefill_email?: string;
+    prefill_phone?: string;
+  }>;
 }) {
   const { slug } = await params;
-  const { recover } = await searchParams;
+  const { recover, prefill_name, prefill_email, prefill_phone } = await searchParams;
 
   let product;
   try {
@@ -45,9 +50,15 @@ export default async function CheckoutPageRoute({
     ({ config, ...rest }) => ({ ...rest, config: null })
   );
 
-  // Pre-fill buyer data from abandoned order
+  // Pre-fill buyer data from abandoned order or upsell redirect
   let recoverData: { name: string; email: string; phone: string } | undefined;
-  if (recover) {
+  if (prefill_name && prefill_email && prefill_phone) {
+    recoverData = {
+      name: prefill_name,
+      email: prefill_email,
+      phone: prefill_phone,
+    };
+  } else if (recover) {
     try {
       const order = await getOrderById(recover);
       if (order && order.status === "pending") {

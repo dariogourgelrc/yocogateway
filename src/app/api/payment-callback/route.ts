@@ -51,6 +51,31 @@ export async function GET(request: NextRequest) {
     // Don't block the redirect — webhook will handle as backup
   }
 
+  // Append buyer data + UTMs to upsell URLs so the next checkout auto-fills
+  let finalUrl = redirectTo;
+  try {
+    const order = orderId ? await getOrderById(orderId) : null;
+    if (order) {
+      const url = new URL(redirectTo);
+      url.searchParams.set("prefill_name", order.buyer_name);
+      url.searchParams.set("prefill_email", order.buyer_email);
+      url.searchParams.set("prefill_phone", order.buyer_phone);
+
+      // Carry UTMs forward so upsell orders track the same campaign
+      const tp = order.tracking_params as Record<string, string | null>;
+      const utmKeys = ["src", "sck", "utm_source", "utm_campaign", "utm_medium", "utm_content", "utm_term"];
+      for (const key of utmKeys) {
+        if (tp[key]) {
+          url.searchParams.set(key, tp[key]);
+        }
+      }
+
+      finalUrl = url.toString();
+    }
+  } catch {
+    // ignore — just redirect without prefill
+  }
+
   // Always redirect, even if processing failed
-  return NextResponse.redirect(redirectTo);
+  return NextResponse.redirect(finalUrl);
 }

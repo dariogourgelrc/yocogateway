@@ -165,7 +165,12 @@ export function CheckoutPage({ product, offerId, recoverData }: CheckoutPageProp
 
           {/* Order bumps — only shown after buyer fills in the form */}
           {product.order_bumps.length > 0 && formValid && (
-            <div className="border-b border-gray-100 px-5 py-4">
+            <div
+              className="border-b border-gray-100 px-5 py-4 animate-fade-in"
+              style={{
+                animation: "fadeIn 0.4s ease-out",
+              }}
+            >
               <p className="mb-3 text-sm font-semibold text-gray-900">
                 Add to your order
               </p>

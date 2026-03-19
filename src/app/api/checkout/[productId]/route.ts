@@ -136,18 +136,31 @@ export async function POST(
       })),
     ];
 
+    // Build UTM query string to carry forward
+    const utmKeys = ["src", "sck", "utm_source", "utm_campaign", "utm_medium", "utm_content", "utm_term"] as const;
+    const utmEntries = utmKeys
+      .filter((k) => trackingParams[k])
+      .map((k) => `${k}=${encodeURIComponent(trackingParams[k]!)}`);
+    const utmQuery = utmEntries.length > 0 ? utmEntries.join("&") : "";
+
     // Build the final destination after payment
     const finalDestination = product.upsell_url || `${appUrl}/checkout/${product.slug}/success?order_id=${order.id}`;
 
     // Always route through payment-callback to fire UTMify + notifications
     const successUrl = `${appUrl}/api/payment-callback?order_id=${order.id}&redirect_to=${encodeURIComponent(finalDestination)}`;
 
+    // Append UTMs to cancel/back redirect so campaigns are preserved
+    let cancelUrl = backRedirectUrl || `${appUrl}/checkout/${product.slug}/cancel`;
+    if (utmQuery && cancelUrl) {
+      cancelUrl += (cancelUrl.includes("?") ? "&" : "?") + utmQuery;
+    }
+
     // Create Yoco payment session
     const yocoSession = await createYocoSession({
       amountInCents: total,
       currency: "ZAR", // Yoco only supports ZAR; NAD is pegged 1:1
       successUrl,
-      cancelUrl: backRedirectUrl || `${appUrl}/checkout/${product.slug}/cancel`,
+      cancelUrl,
       failureUrl: `${appUrl}/checkout/${product.slug}/cancel`,
       lineItems,
       metadata: { orderId: order.id },
