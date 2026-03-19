@@ -136,7 +136,8 @@ export async function POST(
     const finalDestination = product.upsell_url || `${appUrl}/checkout/${product.slug}/success?order_id=${order.id}`;
 
     // Always route through payment-callback to fire UTMify + notifications
-    const returnUrl = `${appUrl}/api/payment-callback?order_id=${order.id}&redirect_to=${encodeURIComponent(finalDestination)}`;
+    // Stripe embedded checkout requires {CHECKOUT_SESSION_ID} in return_url
+    const returnUrl = `${appUrl}/api/payment-callback?order_id=${order.id}&session_id={CHECKOUT_SESSION_ID}&redirect_to=${encodeURIComponent(finalDestination)}`;
 
     // Create Stripe embedded checkout session
     const stripeSession = await createStripeSession({
