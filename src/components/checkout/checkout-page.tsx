@@ -6,7 +6,7 @@ import { ProductInfo } from "./product-info";
 import { OrderBumpCard } from "./order-bump-card";
 import { BuyerForm, type BuyerInfo } from "./buyer-form";
 import { OrderSummary } from "./order-summary";
-import { YocoPayment } from "./yoco-payment";
+import { StripePayment } from "./stripe-payment";
 import { useTracker } from "@/hooks/use-tracker";
 import { extractUtmParams } from "@/lib/trackers/utm";
 import { generateEventId } from "@/lib/utils/event-id";
@@ -196,7 +196,7 @@ export function CheckoutPage({ product, offerId, recoverData }: CheckoutPageProp
               total={total}
             />
             <div className="mt-4">
-              <YocoPayment
+              <StripePayment
                 productId={product.id}
                 offerId={offerId}
                 productName={product.name}

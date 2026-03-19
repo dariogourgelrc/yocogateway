@@ -48,16 +48,12 @@ export async function POST(
     const allBumps = await getOrderBumps(productId);
     const trackers = await getProductTrackers(productId);
 
-    // If an offer is specified, use its price and back_redirect_url
+    // If an offer is specified, use its price
     let basePrice = product.price;
-    let backRedirectUrl = product.back_redirect_url;
     if (body.offer_id) {
       const offer = await getOfferById(body.offer_id);
       if (offer && offer.product_id === productId) {
         basePrice = offer.price;
-        if (offer.back_redirect_url) {
-          backRedirectUrl = offer.back_redirect_url;
-        }
       }
     }
 
@@ -136,31 +132,17 @@ export async function POST(
       })),
     ];
 
-    // Build UTM query string to carry forward
-    const utmKeys = ["src", "sck", "utm_source", "utm_campaign", "utm_medium", "utm_content", "utm_term"] as const;
-    const utmEntries = utmKeys
-      .filter((k) => trackingParams[k])
-      .map((k) => `${k}=${encodeURIComponent(trackingParams[k]!)}`);
-    const utmQuery = utmEntries.length > 0 ? utmEntries.join("&") : "";
-
     // Build the final destination after payment
     const finalDestination = product.upsell_url || `${appUrl}/checkout/${product.slug}/success?order_id=${order.id}`;
 
     // Always route through payment-callback to fire UTMify + notifications
-    const successUrl = `${appUrl}/api/payment-callback?order_id=${order.id}&redirect_to=${encodeURIComponent(finalDestination)}`;
+    const returnUrl = `${appUrl}/api/payment-callback?order_id=${order.id}&redirect_to=${encodeURIComponent(finalDestination)}`;
 
-    // Append UTMs to cancel/back redirect so campaigns are preserved
-    let cancelUrl = backRedirectUrl || `${appUrl}/checkout/${product.slug}/cancel`;
-    if (utmQuery && cancelUrl) {
-      cancelUrl += (cancelUrl.includes("?") ? "&" : "?") + utmQuery;
-    }
-
-    // Create Stripe payment session
+    // Create Stripe embedded checkout session
     const stripeSession = await createStripeSession({
       amountInCents: total,
       currency: product.currency,
-      successUrl,
-      cancelUrl,
+      returnUrl,
       customerEmail: buyerEmail,
       lineItems,
       metadata: { orderId: order.id },
@@ -187,7 +169,7 @@ export async function POST(
 
     return NextResponse.json({
       order_id: order.id,
-      redirect_url: stripeSession.redirectUrl,
+      client_secret: stripeSession.clientSecret,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

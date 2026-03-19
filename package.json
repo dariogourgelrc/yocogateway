@@ -11,6 +11,8 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
+    "@stripe/react-stripe-js": "^5.6.1",
+    "@stripe/stripe-js": "^8.11.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.4",
     "nanoid": "^5.1.5",

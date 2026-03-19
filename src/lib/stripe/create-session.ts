@@ -17,8 +17,7 @@ interface LineItem {
 interface CreateSessionParams {
   amountInCents: number;
   currency: string;
-  successUrl: string;
-  cancelUrl: string;
+  returnUrl: string;
   lineItems?: LineItem[];
   metadata?: Record<string, string>;
   customerEmail?: string;
@@ -26,7 +25,7 @@ interface CreateSessionParams {
 
 interface PaymentSession {
   id: string;
-  redirectUrl: string;
+  clientSecret: string;
 }
 
 export async function createStripeSession(
@@ -34,8 +33,8 @@ export async function createStripeSession(
 ): Promise<PaymentSession> {
   const session = await getStripe().checkout.sessions.create({
     mode: "payment",
-    success_url: params.successUrl,
-    cancel_url: params.cancelUrl,
+    ui_mode: "embedded",
+    return_url: params.returnUrl,
     customer_email: params.customerEmail,
     metadata: params.metadata,
     line_items: (params.lineItems || []).map((item) => ({
@@ -50,9 +49,9 @@ export async function createStripeSession(
     })),
   });
 
-  if (!session.url) {
-    throw new Error("Stripe session creation failed: no URL returned");
+  if (!session.client_secret) {
+    throw new Error("Stripe session creation failed: no client_secret returned");
   }
 
-  return { id: session.id, redirectUrl: session.url };
+  return { id: session.id, clientSecret: session.client_secret };
 }
