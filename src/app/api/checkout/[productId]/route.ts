@@ -5,7 +5,7 @@ import { getOrderBumps } from "@/lib/db/order-bumps";
 import { getProductTrackers } from "@/lib/db/product-trackers";
 import { createOrder } from "@/lib/db/orders";
 import { createOrderItems } from "@/lib/db/order-items";
-import { createYocoSession } from "@/lib/yoco/create-session";
+import { createStripeSession } from "@/lib/stripe/create-session";
 import { fireServerTrackers } from "@/lib/trackers/server-registry";
 import { createServerClient } from "@/lib/supabase/server";
 import type {
@@ -155,28 +155,28 @@ export async function POST(
       cancelUrl += (cancelUrl.includes("?") ? "&" : "?") + utmQuery;
     }
 
-    // Create Yoco payment session
-    const yocoSession = await createYocoSession({
+    // Create Stripe payment session
+    const stripeSession = await createStripeSession({
       amountInCents: total,
-      currency: "ZAR", // Yoco only supports ZAR; NAD is pegged 1:1
+      currency: product.currency,
       successUrl,
       cancelUrl,
-      failureUrl: `${appUrl}/checkout/${product.slug}/cancel`,
+      customerEmail: buyerEmail,
       lineItems,
       metadata: { orderId: order.id },
     });
 
-    // Update order with yoco_payment_id
+    // Update order with payment session id
     const supabase = createServerClient();
     await supabase
       .from("orders")
-      .update({ yoco_payment_id: yocoSession.id })
+      .update({ yoco_payment_id: stripeSession.id })
       .eq("id", order.id);
 
     // Fire server trackers (orderCreated)
     const orderWithItems = {
       ...order,
-      yoco_payment_id: yocoSession.id,
+      yoco_payment_id: stripeSession.id,
       order_items: orderItems,
     };
 
@@ -187,7 +187,7 @@ export async function POST(
 
     return NextResponse.json({
       order_id: order.id,
-      redirect_url: yocoSession.redirectUrl,
+      redirect_url: stripeSession.redirectUrl,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

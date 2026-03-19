@@ -8,7 +8,7 @@ import { sendWhatsAppConfirmation } from "@/lib/notifications/whatsapp";
 import { sendSaleNotification } from "@/lib/notifications/sale-alert";
 
 /**
- * Yoco always redirects here after successful payment.
+ * Stripe always redirects here after successful payment.
  * This route handles: mark paid → UTMify → email → WhatsApp → redirect.
  * Then redirects to upsell or success page.
  */
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       url.searchParams.set("prefill_phone", order.buyer_phone);
 
       // Carry UTMs forward so upsell orders track the same campaign
-      const tp = order.tracking_params as Record<string, string | null>;
+      const tp = order.tracking_params as unknown as Record<string, string | null>;
       const utmKeys = ["src", "sck", "utm_source", "utm_campaign", "utm_medium", "utm_content", "utm_term"];
       for (const key of utmKeys) {
         if (tp[key]) {

@@ -133,7 +133,7 @@ export function YocoPayment({
       )}
 
       <p className="text-center text-xs text-gray-400">
-        Secured by Yoco
+        Secured by Stripe
       </p>
     </div>
   );
