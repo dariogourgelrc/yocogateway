@@ -3,7 +3,8 @@
     "allow": [
       "Bash(grep -r \"\"\"use client\"\"\" src --include=\"*.tsx\" -l)",
       "Bash(grep -n \"export async function GET\" src/app/api/products/route.ts src/app/api/products/[id]/route.ts)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npm run:*)"
     ]
   }
 }
