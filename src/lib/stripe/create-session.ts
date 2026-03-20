@@ -34,6 +34,7 @@ export async function createStripeSession(
   const session = await getStripe().checkout.sessions.create({
     mode: "payment",
     ui_mode: "embedded",
+    payment_method_types: ["card"],
     return_url: params.returnUrl,
     customer_email: params.customerEmail,
     metadata: params.metadata,
