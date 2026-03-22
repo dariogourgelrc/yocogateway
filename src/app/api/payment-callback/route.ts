@@ -26,8 +26,11 @@ export async function GET(request: NextRequest) {
   try {
     const order = await getOrderById(orderId);
 
-    if (order && order.status === "pending") {
-      await updateOrderStatus(order.id, "paid");
+    if (order) {
+      // Mark as paid if not already
+      if (order.status !== "paid") {
+        await updateOrderStatus(order.id, "paid");
+      }
 
       const product = await getProductById(order.product_id);
       const trackers = await getProductTrackers(order.product_id);
@@ -37,7 +40,7 @@ export async function GET(request: NextRequest) {
         console.error("payment-callback: server tracker failed:", err)
       );
 
-      // Send notifications
+      // Always send notifications from payment-callback (webhook won't send)
       await Promise.allSettled([
         sendConfirmationEmail(order, product),
         sendWhatsAppConfirmation(order, product),

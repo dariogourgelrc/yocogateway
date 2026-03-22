@@ -54,14 +54,7 @@ export async function POST(request: NextRequest) {
       console.error("Server tracker onOrderPaid failed:", err)
     );
 
-    // Send notifications only if not already sent (first time marking paid)
-    if (order.status !== "paid") {
-      await Promise.allSettled([
-        sendConfirmationEmail(order, product),
-        sendWhatsAppConfirmation(order, product),
-        sendSaleNotification(order, product),
-      ]).catch((err) => console.error("Notification error:", err));
-    }
+    // Notifications are handled by payment-callback (webhook is backup for status + UTMify only)
 
     return NextResponse.json({ received: true, order_id: order.id });
   } catch (err) {
