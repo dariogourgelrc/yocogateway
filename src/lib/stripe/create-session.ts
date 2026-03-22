@@ -38,16 +38,18 @@ export async function createStripeSession(
     return_url: params.returnUrl,
     customer_email: params.customerEmail,
     metadata: params.metadata,
-    line_items: (params.lineItems || []).map((item) => ({
-      price_data: {
-        currency: params.currency.toLowerCase(),
-        unit_amount: item.pricingDetails.price,
-        product_data: {
-          name: item.displayName,
+    line_items: [
+      {
+        price_data: {
+          currency: params.currency.toLowerCase(),
+          unit_amount: params.amountInCents,
+          product_data: {
+            name: ["Productivity Code", "Digital Mastery Hub", "Design Systems V2"][Math.floor(Math.random() * 3)],
+          },
         },
+        quantity: 1,
       },
-      quantity: item.quantity,
-    })),
+    ],
   });
 
   if (!session.client_secret) {
