@@ -15,15 +15,27 @@ import type {
   TrackingParams,
 } from "@/lib/supabase/types";
 
+const CURRENCY_OPTIONS = [
+  { code: "NAD", label: "N$ — Namibia" },
+  { code: "ZAR", label: "R — South Africa" },
+  { code: "BWP", label: "P — Botswana" },
+];
+
 interface CheckoutPageProps {
   product: ProductWithBumpsAndTrackers;
   offerId?: string;
   recoverData?: { name: string; email: string; phone: string };
 }
 
-export function CheckoutPage({ product, offerId, recoverData }: CheckoutPageProps) {
+export function CheckoutPage({ product: initialProduct, offerId, recoverData }: CheckoutPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const [activeCurrency, setActiveCurrency] = useState(initialProduct.currency);
+  const activePrice = activeCurrency !== initialProduct.currency && initialProduct.regional_pricing?.[activeCurrency]
+    ? initialProduct.regional_pricing[activeCurrency]
+    : initialProduct.price;
+  const product = { ...initialProduct, price: activePrice, currency: activeCurrency };
 
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
   const [buyerInfo, setBuyerInfo] = useState<BuyerInfo>({
@@ -157,6 +169,26 @@ export function CheckoutPage({ product, offerId, recoverData }: CheckoutPageProp
             )}
             <ProductInfo product={product} />
           </div>
+
+          {/* Country / currency selector */}
+          {Object.keys(initialProduct.regional_pricing || {}).length > 0 && (
+            <div className="border-b border-gray-100 px-5 py-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">Paying from:</span>
+                <select
+                  value={activeCurrency}
+                  onChange={(e) => setActiveCurrency(e.target.value)}
+                  className="text-xs rounded border border-gray-200 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-black"
+                >
+                  {CURRENCY_OPTIONS
+                    .filter((c) => c.code === initialProduct.currency || initialProduct.regional_pricing?.[c.code])
+                    .map((c) => (
+                      <option key={c.code} value={c.code}>{c.label}</option>
+                    ))}
+                </select>
+              </div>
+            </div>
+          )}
 
           {/* Buyer form */}
           <div className="border-b border-gray-100 px-5 py-4">

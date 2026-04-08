@@ -43,6 +43,14 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
     initialData?.back_redirect_url || ""
   );
 
+  const [regionalPricing, setRegionalPricing] = useState<Record<string, string>>(() => {
+    const rp = initialData?.regional_pricing || {};
+    return {
+      ZAR: rp.ZAR ? (rp.ZAR / 100).toFixed(2) : "",
+      BWP: rp.BWP ? (rp.BWP / 100).toFixed(2) : "",
+    };
+  });
+
   const [remarketingEnabled, setRemarketingEnabled] = useState(
     initialData?.remarketing_enabled || false
   );
@@ -124,6 +132,11 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
       delivery_url: deliveryUrl,
       upsell_url: upsellUrl || null,
       back_redirect_url: backRedirectUrl || null,
+      regional_pricing: Object.fromEntries(
+        Object.entries(regionalPricing)
+          .filter(([, v]) => v && parseFloat(v) > 0)
+          .map(([k, v]) => [k, Math.round(parseFloat(v) * 100)])
+      ),
       remarketing_enabled: remarketingEnabled,
       remarketing_offer_1: remarketingOffer1 || null,
       remarketing_offer_2: remarketingOffer2 || null,
@@ -224,6 +237,34 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
                 <option value="NAD">NAD (Namibian Dollar)</option>
                 <option value="ZAR">ZAR (South African Rand)</option>
               </select>
+            </div>
+          </div>
+
+          {/* Regional Pricing */}
+          <div className="border-t border-gray-100 pt-4 mt-2">
+            <p className="text-sm font-semibold text-gray-700 mb-2">Regional Pricing (optional)</p>
+            <p className="text-xs text-gray-500 mb-3">
+              Set prices for other countries. Leave empty to use the base price above.
+            </p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Input
+                label="ZAR Price (South Africa)"
+                type="number"
+                min={0}
+                step="0.01"
+                value={regionalPricing.ZAR}
+                onChange={(e) => setRegionalPricing({ ...regionalPricing, ZAR: e.target.value })}
+                placeholder="149.99"
+              />
+              <Input
+                label="BWP Price (Botswana)"
+                type="number"
+                min={0}
+                step="0.01"
+                value={regionalPricing.BWP}
+                onChange={(e) => setRegionalPricing({ ...regionalPricing, BWP: e.target.value })}
+                placeholder="129.99"
+              />
             </div>
           </div>
 

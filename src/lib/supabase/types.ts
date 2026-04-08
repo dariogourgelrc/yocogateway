@@ -13,6 +13,7 @@ export interface Product {
   delivery_url: string;
   upsell_url: string | null;
   back_redirect_url: string | null;
+  regional_pricing: Record<string, number>; // e.g. {"ZAR": 9700, "BWP": 8500}
   remarketing_enabled: boolean;
   remarketing_offer_1: string | null; // product_offers.id
   remarketing_offer_2: string | null;
@@ -135,6 +136,7 @@ export interface OrderWithItems extends Order {
 export interface CreateOrderRequest {
   product_id: string;
   offer_id?: string; // if purchasing via an offer slug
+  currency?: string; // regional pricing override (e.g. "ZAR", "BWP")
   buyer_name: string;
   buyer_email: string;
   buyer_phone: string;

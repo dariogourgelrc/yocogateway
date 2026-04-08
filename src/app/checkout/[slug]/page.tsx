@@ -1,8 +1,15 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { getProductBySlug } from "@/lib/db/products";
 import { getOrderById } from "@/lib/db/orders";
 import { CheckoutPage } from "@/components/checkout/checkout-page";
 import type { Metadata } from "next";
+
+const COUNTRY_CURRENCY: Record<string, string> = {
+  NA: "NAD", // Namibia
+  ZA: "ZAR", // South Africa
+  BW: "BWP", // Botswana
+};
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +50,17 @@ export default async function CheckoutPageRoute({
     product = await getProductBySlug(slug);
   } catch {
     notFound();
+  }
+
+  // Detect country from Vercel header
+  const headersList = await headers();
+  const countryCode = headersList.get("x-vercel-ip-country") || "";
+  const detectedCurrency = COUNTRY_CURRENCY[countryCode] || null;
+
+  // Apply regional pricing if available
+  if (detectedCurrency && detectedCurrency !== product.currency && product.regional_pricing?.[detectedCurrency]) {
+    product.price = product.regional_pricing[detectedCurrency];
+    product.currency = detectedCurrency;
   }
 
   // Strip sensitive config (API tokens) from trackers before sending to client

@@ -48,8 +48,15 @@ export async function POST(
     const allBumps = await getOrderBumps(productId);
     const trackers = await getProductTrackers(productId);
 
-    // If an offer is specified, use its price
+    // Resolve currency and price (regional pricing support)
+    let activeCurrency = product.currency;
     let basePrice = product.price;
+    if (body.currency && body.currency !== product.currency && product.regional_pricing?.[body.currency]) {
+      activeCurrency = body.currency;
+      basePrice = product.regional_pricing[body.currency];
+    }
+
+    // If an offer is specified, use its price (overrides regional)
     if (body.offer_id) {
       const offer = await getOfferById(body.offer_id);
       if (offer && offer.product_id === productId) {
@@ -88,7 +95,7 @@ export async function POST(
       buyer_email: buyerEmail,
       buyer_phone: buyerPhone,
       total_amount: total,
-      currency: product.currency,
+      currency: activeCurrency,
       tracking_params: trackingParams,
     });
 
@@ -142,7 +149,7 @@ export async function POST(
     // Create Stripe embedded checkout session
     const stripeSession = await createStripeSession({
       amountInCents: total,
-      currency: product.currency,
+      currency: activeCurrency,
       returnUrl,
       customerEmail: buyerEmail,
       lineItems,

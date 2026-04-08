@@ -69,6 +69,7 @@ export function StripePayment({
           buyer_phone: buyerPhone,
           selected_bump_ids: selectedBumpIds,
           tracking_params: { ...trackingParams, event_id: eventId },
+          currency,
         }),
       });
 
@@ -88,6 +89,7 @@ export function StripePayment({
   }, [
     productId,
     offerId,
+    currency,
     buyerName,
     buyerEmail,
     buyerPhone,

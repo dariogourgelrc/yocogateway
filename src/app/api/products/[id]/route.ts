@@ -27,6 +27,7 @@ interface UpdateProductBody {
   delivery_url?: string;
   upsell_url?: string | null;
   back_redirect_url?: string | null;
+  regional_pricing?: Record<string, number>;
   remarketing_enabled?: boolean;
   remarketing_offer_1?: string | null;
   remarketing_offer_2?: string | null;
@@ -54,6 +55,8 @@ export async function PUT(
     if (body.upsell_url !== undefined) productUpdates.upsell_url = body.upsell_url;
     if (body.back_redirect_url !== undefined)
       productUpdates.back_redirect_url = body.back_redirect_url;
+    if (body.regional_pricing !== undefined)
+      productUpdates.regional_pricing = body.regional_pricing;
     if (body.remarketing_enabled !== undefined)
       productUpdates.remarketing_enabled = body.remarketing_enabled;
     if (body.remarketing_offer_1 !== undefined)
