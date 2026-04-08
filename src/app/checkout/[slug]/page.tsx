@@ -52,16 +52,10 @@ export default async function CheckoutPageRoute({
     notFound();
   }
 
-  // Detect country from Vercel header
+  // Detect country from Vercel header for initial currency selection
   const headersList = await headers();
   const countryCode = headersList.get("x-vercel-ip-country") || "";
   const detectedCurrency = COUNTRY_CURRENCY[countryCode] || null;
-
-  // Apply regional pricing if available
-  if (detectedCurrency && detectedCurrency !== product.currency && product.regional_pricing?.[detectedCurrency]) {
-    product.price = product.regional_pricing[detectedCurrency];
-    product.currency = detectedCurrency;
-  }
 
   // Strip sensitive config (API tokens) from trackers before sending to client
   product.product_trackers = product.product_trackers.map(
@@ -94,6 +88,7 @@ export default async function CheckoutPageRoute({
   return (
     <CheckoutPage
       product={product}
+      detectedCurrency={detectedCurrency}
       offerId={product.activeOffer?.id}
       recoverData={recoverData}
     />

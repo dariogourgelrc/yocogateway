@@ -23,18 +23,27 @@ const CURRENCY_OPTIONS = [
 
 interface CheckoutPageProps {
   product: ProductWithBumpsAndTrackers;
+  detectedCurrency?: string | null;
   offerId?: string;
   recoverData?: { name: string; email: string; phone: string };
 }
 
-export function CheckoutPage({ product: initialProduct, offerId, recoverData }: CheckoutPageProps) {
+export function CheckoutPage({ product: initialProduct, detectedCurrency, offerId, recoverData }: CheckoutPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [activeCurrency, setActiveCurrency] = useState(initialProduct.currency);
-  const activePrice = activeCurrency !== initialProduct.currency && initialProduct.regional_pricing?.[activeCurrency]
-    ? initialProduct.regional_pricing[activeCurrency]
-    : initialProduct.price;
+  // Use detected currency if it has a regional price, otherwise use product base currency
+  const initialCurrency =
+    detectedCurrency && initialProduct.regional_pricing?.[detectedCurrency]
+      ? detectedCurrency
+      : initialProduct.currency;
+
+  const [activeCurrency, setActiveCurrency] = useState(initialCurrency);
+
+  // Resolve price: base currency uses product.price, regional uses regional_pricing
+  const activePrice = activeCurrency === initialProduct.currency
+    ? initialProduct.price
+    : initialProduct.regional_pricing?.[activeCurrency] || initialProduct.price;
   const product = { ...initialProduct, price: activePrice, currency: activeCurrency };
 
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
