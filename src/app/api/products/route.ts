@@ -19,6 +19,7 @@ interface CreateProductBody {
   delivery_url: string;
   upsell_url?: string | null;
   back_redirect_url?: string | null;
+  regional_pricing?: Record<string, number>;
   order_bumps: Omit<OrderBumpInsert, "product_id">[];
   trackers: Omit<ProductTrackerInsert, "product_id">[];
 }
@@ -44,6 +45,7 @@ export async function POST(request: NextRequest) {
       delivery_url: body.delivery_url || "",
       upsell_url: body.upsell_url || null,
       back_redirect_url: body.back_redirect_url || null,
+      regional_pricing: body.regional_pricing || {},
       remarketing_enabled: false,
       remarketing_offer_1: null,
       remarketing_offer_2: null,
