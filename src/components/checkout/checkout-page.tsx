@@ -40,11 +40,14 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
 
   const [activeCurrency, setActiveCurrency] = useState(initialCurrency);
 
-  // Resolve price: base currency uses product.price, regional uses regional_pricing
-  const activePrice = activeCurrency === initialProduct.currency
+  // Resolve price: offers always use their own price; otherwise base currency uses
+  // product.price and regional currencies use regional_pricing.
+  const activePrice = offerId
     ? initialProduct.price
-    : initialProduct.regional_pricing?.[activeCurrency] || initialProduct.price;
-  const product = { ...initialProduct, price: activePrice, currency: activeCurrency };
+    : activeCurrency === initialProduct.currency
+      ? initialProduct.price
+      : initialProduct.regional_pricing?.[activeCurrency] || initialProduct.price;
+  const product = { ...initialProduct, price: activePrice, currency: offerId ? initialProduct.currency : activeCurrency };
 
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
   const [buyerInfo, setBuyerInfo] = useState<BuyerInfo>({
@@ -179,8 +182,8 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
             <ProductInfo product={product} />
           </div>
 
-          {/* Country / currency selector */}
-          {Object.keys(initialProduct.regional_pricing || {}).length > 0 && (
+          {/* Country / currency selector — hidden on offer checkouts (offers have no regional pricing) */}
+          {!offerId && Object.keys(initialProduct.regional_pricing || {}).length > 0 && (
             <div className="border-b border-gray-100 px-5 py-3">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-500">Paying from:</span>
