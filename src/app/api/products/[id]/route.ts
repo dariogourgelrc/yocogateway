@@ -23,6 +23,7 @@ import type {
 } from "@/lib/supabase/types";
 
 interface UpdateProductBody {
+  type?: "digital" | "physical";
   name?: string;
   slug?: string;
   description?: string;
@@ -33,6 +34,9 @@ interface UpdateProductBody {
   upsell_url?: string | null;
   back_redirect_url?: string | null;
   regional_pricing?: Record<string, number>;
+  store_name?: string;
+  support_email?: string;
+  support_phone?: string;
   remarketing_enabled?: boolean;
   remarketing_offer_1?: string | null;
   remarketing_offer_2?: string | null;
@@ -61,6 +65,7 @@ export async function PUT(
     const body: UpdateProductBody = await request.json();
 
     const productUpdates: ProductUpdate = {};
+    if (body.type !== undefined) productUpdates.type = body.type;
     if (body.name !== undefined) productUpdates.name = body.name;
     if (body.slug !== undefined) productUpdates.slug = body.slug;
     if (body.description !== undefined) productUpdates.description = body.description;
@@ -73,6 +78,9 @@ export async function PUT(
       productUpdates.back_redirect_url = body.back_redirect_url;
     if (body.regional_pricing !== undefined)
       productUpdates.regional_pricing = body.regional_pricing;
+    if (body.store_name !== undefined) productUpdates.store_name = body.store_name;
+    if (body.support_email !== undefined) productUpdates.support_email = body.support_email;
+    if (body.support_phone !== undefined) productUpdates.support_phone = body.support_phone;
     if (body.remarketing_enabled !== undefined)
       productUpdates.remarketing_enabled = body.remarketing_enabled;
     if (body.remarketing_offer_1 !== undefined)

@@ -20,3 +20,31 @@ CREATE TABLE IF NOT EXISTS user_settings (
 
 -- 3. Índice para lookup rápido por user_id
 CREATE INDEX IF NOT EXISTS idx_products_user_id ON products(user_id);
+
+-- ============================================================
+-- MIGRATION: Produtos Físicos
+-- Execute no Supabase Dashboard → SQL Editor
+-- ============================================================
+
+-- 4. Campos de produto físico em products
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS type text NOT NULL DEFAULT 'digital' CHECK (type IN ('digital', 'physical')),
+  ADD COLUMN IF NOT EXISTS store_name text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS support_email text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS support_phone text NOT NULL DEFAULT '';
+
+-- 5. Endereço de entrega em orders
+ALTER TABLE orders
+  ADD COLUMN IF NOT EXISTS shipping_address jsonb;
+
+-- ============================================================
+-- PASSO EXTRA: Resgatar produtos existentes
+-- Execute DEPOIS de criar sua conta no Supabase.
+-- Substitua o email abaixo pelo seu email de login.
+-- ============================================================
+
+-- UPDATE products
+-- SET user_id = (
+--   SELECT id FROM auth.users WHERE email = 'SEU_EMAIL_AQUI' LIMIT 1
+-- )
+-- WHERE user_id IS NULL;

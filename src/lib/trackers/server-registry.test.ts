@@ -44,6 +44,7 @@ const makeOrder = (): OrderWithItems => ({
     utm_content: null,
     utm_term: null,
   },
+  shipping_address: null,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
   order_items: [],

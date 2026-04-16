@@ -2,9 +2,17 @@
 // DATABASE ROW TYPES (match schema exactly)
 // ============================================
 
+export interface ShippingAddress {
+  address_line: string;
+  city: string;
+  postal_code: string;
+  country: string;
+}
+
 export interface Product {
   id: string;
   user_id: string | null; // owner — null for legacy products
+  type: "digital" | "physical";
   slug: string;
   name: string;
   description: string;
@@ -15,6 +23,9 @@ export interface Product {
   upsell_url: string | null;
   back_redirect_url: string | null;
   regional_pricing: Record<string, number>; // e.g. {"ZAR": 9700, "BWP": 8500}
+  store_name: string;
+  support_email: string;
+  support_phone: string;
   remarketing_enabled: boolean;
   remarketing_offer_1: string | null; // product_offers.id
   remarketing_offer_2: string | null;
@@ -78,6 +89,7 @@ export interface Order {
   total_amount: number; // cents
   currency: string;
   tracking_params: TrackingParams;
+  shipping_address: ShippingAddress | null;
   created_at: string;
   updated_at: string;
 }
@@ -156,6 +168,7 @@ export interface CreateOrderRequest {
   buyer_phone: string;
   selected_bump_ids: string[]; // which order bumps the buyer checked
   tracking_params: TrackingParams;
+  shipping_address?: ShippingAddress; // required for physical products
 }
 
 export interface CreateOrderResponse {

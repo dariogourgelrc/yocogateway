@@ -8,6 +8,7 @@ import {
 } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils/currency";
+import type { ShippingInfo } from "./shipping-form";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
@@ -26,6 +27,7 @@ interface StripePaymentProps {
   buyerEmail: string;
   buyerPhone: string;
   selectedBumpIds: string[];
+  shippingAddress?: ShippingInfo;
   trackingParams: Record<string, unknown>;
   eventId: string;
   onPaymentStart: () => void;
@@ -43,6 +45,7 @@ export function StripePayment({
   buyerEmail,
   buyerPhone,
   selectedBumpIds,
+  shippingAddress,
   trackingParams,
   eventId,
   onPaymentStart,
@@ -68,6 +71,7 @@ export function StripePayment({
           buyer_email: buyerEmail,
           buyer_phone: buyerPhone,
           selected_bump_ids: selectedBumpIds,
+          shipping_address: shippingAddress || undefined,
           tracking_params: { ...trackingParams, event_id: eventId },
           currency,
         }),
@@ -94,6 +98,7 @@ export function StripePayment({
     buyerEmail,
     buyerPhone,
     selectedBumpIds,
+    shippingAddress,
     trackingParams,
     eventId,
     onPaymentStart,

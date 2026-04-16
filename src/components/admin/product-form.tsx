@@ -64,6 +64,13 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
     initialData?.remarketing_offer_3 || ""
   );
 
+  const [productType, setProductType] = useState<"digital" | "physical">(
+    initialData?.type || "digital"
+  );
+  const [storeName, setStoreName] = useState(initialData?.store_name || "");
+  const [supportEmail, setSupportEmail] = useState(initialData?.support_email || "");
+  const [supportPhone, setSupportPhone] = useState(initialData?.support_phone || "");
+
   const [orderBumps, setOrderBumps] = useState<OrderBumpData[]>(
     initialData?.order_bumps?.map((b) => ({
       id: b.id,
@@ -123,13 +130,14 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
     setFeedback(null);
 
     const body = {
+      type: productType,
       name,
       slug,
       description,
       price: Math.round(parseFloat(price || "0") * 100),
       currency,
       image_url: imageUrl,
-      delivery_url: deliveryUrl,
+      delivery_url: productType === "digital" ? deliveryUrl : "",
       upsell_url: upsellUrl || null,
       back_redirect_url: backRedirectUrl || null,
       regional_pricing: Object.fromEntries(
@@ -137,6 +145,9 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
           .filter(([, v]) => v && parseFloat(v) > 0)
           .map(([k, v]) => [k, Math.round(parseFloat(v) * 100)])
       ),
+      store_name: storeName,
+      support_email: supportEmail,
+      support_phone: supportPhone,
       remarketing_enabled: remarketingEnabled,
       remarketing_offer_1: remarketingOffer1 || null,
       remarketing_offer_2: remarketingOffer2 || null,
@@ -188,6 +199,35 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
+      {/* Product type toggle */}
+      <Card>
+        <h2 className="mb-3 text-lg font-semibold">Tipo de Produto</h2>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => setProductType("digital")}
+            className={`flex-1 rounded-lg border-2 py-3 text-sm font-medium transition-colors ${
+              productType === "digital"
+                ? "border-black bg-black text-white"
+                : "border-gray-200 text-gray-600 hover:border-gray-400"
+            }`}
+          >
+            Digital
+          </button>
+          <button
+            type="button"
+            onClick={() => setProductType("physical")}
+            className={`flex-1 rounded-lg border-2 py-3 text-sm font-medium transition-colors ${
+              productType === "physical"
+                ? "border-black bg-black text-white"
+                : "border-gray-200 text-gray-600 hover:border-gray-400"
+            }`}
+          >
+            Físico
+          </button>
+        </div>
+      </Card>
+
       {/* Product info */}
       <Card>
         <h2 className="mb-4 text-lg font-semibold">Product Details</h2>
@@ -274,13 +314,15 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
             onChange={setImageUrl}
           />
 
-          <Input
-            label="Delivery URL"
-            type="url"
-            value={deliveryUrl}
-            onChange={(e) => setDeliveryUrl(e.target.value)}
-            placeholder="https://course.example.com/access"
-          />
+          {productType === "digital" && (
+            <Input
+              label="Delivery URL"
+              type="url"
+              value={deliveryUrl}
+              onChange={(e) => setDeliveryUrl(e.target.value)}
+              placeholder="https://course.example.com/access"
+            />
+          )}
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input
@@ -296,6 +338,39 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
               value={backRedirectUrl}
               onChange={(e) => setBackRedirectUrl(e.target.value)}
               placeholder="https://example.com/back"
+            />
+          </div>
+        </div>
+      </Card>
+
+      {/* Store info — shown for physical products, recommended for digital */}
+      <Card>
+        <h2 className="mb-1 text-lg font-semibold">Informações da Loja</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          {productType === "physical"
+            ? "Aparece no email de confirmação do pedido."
+            : "Aparece no email de suporte ao comprador."}
+        </p>
+        <div className="space-y-4">
+          <Input
+            label="Nome da Loja"
+            value={storeName}
+            onChange={(e) => setStoreName(e.target.value)}
+            placeholder="Minha Loja"
+          />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input
+              label="Email de Suporte"
+              type="email"
+              value={supportEmail}
+              onChange={(e) => setSupportEmail(e.target.value)}
+              placeholder="suporte@minhaloja.com"
+            />
+            <Input
+              label="Telefone / WhatsApp de Suporte"
+              value={supportPhone}
+              onChange={(e) => setSupportPhone(e.target.value)}
+              placeholder="+264 81 000 0000"
             />
           </div>
         </div>

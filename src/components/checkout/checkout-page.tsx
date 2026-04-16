@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ProductInfo } from "./product-info";
 import { OrderBumpCard } from "./order-bump-card";
 import { BuyerForm, type BuyerInfo } from "./buyer-form";
+import { ShippingForm, type ShippingInfo } from "./shipping-form";
 import { OrderSummary } from "./order-summary";
 import { StripePayment } from "./stripe-payment";
 import { useTracker } from "@/hooks/use-tracker";
@@ -48,6 +49,13 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
       ? initialProduct.price
       : initialProduct.regional_pricing?.[activeCurrency] || initialProduct.price;
   const product = { ...initialProduct, price: activePrice, currency: offerId ? initialProduct.currency : activeCurrency };
+
+  const [shippingAddress, setShippingAddress] = useState<ShippingInfo>({
+    address_line: "",
+    city: "",
+    postal_code: "",
+    country: "",
+  });
 
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
   const [buyerInfo, setBuyerInfo] = useState<BuyerInfo>({
@@ -111,10 +119,18 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
     [product.price, selectedBumpsList]
   );
 
+  const shippingValid =
+    product.type !== "physical" ||
+    (shippingAddress.address_line.trim() !== "" &&
+      shippingAddress.city.trim() !== "" &&
+      shippingAddress.postal_code.trim() !== "" &&
+      shippingAddress.country.trim() !== "");
+
   const formValid =
     buyerInfo.name.trim() !== "" &&
     buyerInfo.email.trim() !== "" &&
-    buyerInfo.phone.trim() !== "";
+    buyerInfo.phone.trim() !== "" &&
+    shippingValid;
 
   const toggleBump = useCallback((bumpId: string) => {
     setSelectedBumps((prev) => {
@@ -207,6 +223,19 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
             <BuyerForm value={buyerInfo} onChange={setBuyerInfo} />
           </div>
 
+          {/* Shipping address — only for physical products, shown after buyer form */}
+          {product.type === "physical" &&
+            buyerInfo.name.trim() !== "" &&
+            buyerInfo.email.trim() !== "" &&
+            buyerInfo.phone.trim() !== "" && (
+              <div className="border-b border-gray-100 px-5 py-4">
+                <ShippingForm
+                  value={shippingAddress}
+                  onChange={setShippingAddress}
+                />
+              </div>
+            )}
+
           {/* Order bumps — only shown after buyer fills in the form */}
           {product.order_bumps.length > 0 && formValid && (
             <div
@@ -253,6 +282,7 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
                 buyerEmail={buyerInfo.email}
                 buyerPhone={buyerInfo.phone}
                 selectedBumpIds={Array.from(selectedBumps)}
+                shippingAddress={product.type === "physical" ? shippingAddress : undefined}
                 trackingParams={
                   trackingParams as unknown as Record<string, unknown>
                 }

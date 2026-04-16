@@ -11,6 +11,7 @@ import type {
 } from "@/lib/supabase/types";
 
 interface CreateProductBody {
+  type?: "digital" | "physical";
   name: string;
   slug?: string;
   description: string;
@@ -21,6 +22,9 @@ interface CreateProductBody {
   upsell_url?: string | null;
   back_redirect_url?: string | null;
   regional_pricing?: Record<string, number>;
+  store_name?: string;
+  support_email?: string;
+  support_phone?: string;
   order_bumps: Omit<OrderBumpInsert, "product_id">[];
   trackers: Omit<ProductTrackerInsert, "product_id">[];
 }
@@ -43,6 +47,7 @@ export async function POST(request: NextRequest) {
 
     const productData: ProductInsert = {
       user_id: user.id,
+      type: body.type || "digital",
       name: body.name,
       slug: body.slug || generateSlug(body.name),
       description: body.description || "",
@@ -53,6 +58,9 @@ export async function POST(request: NextRequest) {
       upsell_url: body.upsell_url || null,
       back_redirect_url: body.back_redirect_url || null,
       regional_pricing: body.regional_pricing || {},
+      store_name: body.store_name || "",
+      support_email: body.support_email || "",
+      support_phone: body.support_phone || "",
       remarketing_enabled: false,
       remarketing_offer_1: null,
       remarketing_offer_2: null,

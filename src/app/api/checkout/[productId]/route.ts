@@ -64,6 +64,17 @@ export async function POST(
       );
     }
 
+    // For physical products, require shipping address
+    if (product.type === "physical") {
+      const addr = body.shipping_address;
+      if (!addr?.address_line || !addr?.city || !addr?.postal_code || !addr?.country) {
+        return NextResponse.json(
+          { error: "Shipping address is required for physical products" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Resolve currency and price (regional pricing support)
     let activeCurrency = product.currency;
     let basePrice = product.price;
@@ -115,6 +126,7 @@ export async function POST(
       total_amount: total,
       currency: activeCurrency,
       tracking_params: trackingParams,
+      shipping_address: body.shipping_address || null,
     });
 
     // Create order items (snapshots)

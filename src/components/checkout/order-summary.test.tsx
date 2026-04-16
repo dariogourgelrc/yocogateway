@@ -5,6 +5,7 @@ import type { Product, OrderBump } from "@/lib/supabase/types";
 const mockProduct: Product = {
   id: "prod-1",
   user_id: null,
+  type: "digital",
   slug: "test",
   name: "Test Product",
   description: "",
@@ -15,6 +16,9 @@ const mockProduct: Product = {
   upsell_url: null,
   back_redirect_url: null,
   regional_pricing: {},
+  store_name: "",
+  support_email: "",
+  support_phone: "",
   remarketing_enabled: false,
   remarketing_offer_1: null,
   remarketing_offer_2: null,
