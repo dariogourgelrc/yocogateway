@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getUserFromRequest } from "@/lib/supabase/server";
+import { verifyProductOwnership } from "@/lib/db/products";
 import {
   getOffersByProductId,
   createOffer,
@@ -8,11 +10,22 @@ import {
 import type { ProductOfferInsert } from "@/lib/supabase/types";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
+
+    const owns = await verifyProductOwnership(id, user.id);
+    if (!owns) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const offers = await getOffersByProductId(id);
     return NextResponse.json(offers);
   } catch (err) {
@@ -26,7 +39,18 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
+
+    const owns = await verifyProductOwnership(id, user.id);
+    if (!owns) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const body = await request.json();
 
     const offer = await createOffer({
@@ -36,7 +60,7 @@ export async function POST(
       price: body.price,
       back_redirect_url: body.back_redirect_url || null,
       sort_order: body.sort_order ?? 0,
-    });
+    } as ProductOfferInsert);
 
     return NextResponse.json(offer, { status: 201 });
   } catch (err) {
@@ -50,6 +74,18 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    const owns = await verifyProductOwnership(id, user.id);
+    if (!owns) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const body = await request.json();
 
     if (!body.offer_id) {
@@ -79,6 +115,18 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    const owns = await verifyProductOwnership(id, user.id);
+    if (!owns) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const { offer_id } = await request.json();
 
     if (!offer_id) {

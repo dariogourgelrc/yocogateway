@@ -4,6 +4,7 @@
 
 export interface Product {
   id: string;
+  user_id: string | null; // owner — null for legacy products
   slug: string;
   name: string;
   description: string;
@@ -18,6 +19,16 @@ export interface Product {
   remarketing_offer_1: string | null; // product_offers.id
   remarketing_offer_2: string | null;
   remarketing_offer_3: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserSettings {
+  id: string;
+  user_id: string;
+  stripe_secret_key: string;
+  stripe_publishable_key: string;
+  stripe_webhook_secret: string;
   created_at: string;
   updated_at: string;
 }
@@ -97,6 +108,9 @@ export interface TrackingParams {
 
 export type ProductInsert = Omit<Product, "id" | "created_at" | "updated_at">;
 export type ProductUpdate = Partial<ProductInsert>;
+
+export type UserSettingsInsert = Omit<UserSettings, "id" | "created_at" | "updated_at">;
+export type UserSettingsUpdate = Partial<Omit<UserSettingsInsert, "user_id">>;
 
 export type OrderBumpInsert = Omit<OrderBump, "id" | "created_at">;
 export type OrderBumpUpdate = Partial<Omit<OrderBumpInsert, "product_id">>;

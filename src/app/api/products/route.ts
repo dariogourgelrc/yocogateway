@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getUserFromRequest } from "@/lib/supabase/server";
 import { createProduct } from "@/lib/db/products";
 import { createOrderBump } from "@/lib/db/order-bumps";
 import { createTracker } from "@/lib/db/product-trackers";
@@ -26,6 +27,11 @@ interface CreateProductBody {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body: CreateProductBody = await request.json();
 
     if (!body.name || body.price == null || !body.currency) {
@@ -36,6 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     const productData: ProductInsert = {
+      user_id: user.id,
       name: body.name,
       slug: body.slug || generateSlug(body.name),
       description: body.description || "",

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getUserFromRequest } from "@/lib/supabase/server";
+import { verifyProductOwnership } from "@/lib/db/products";
 import {
   getProductTrackers,
   createTracker,
@@ -15,16 +17,25 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
+
+    const owns = await verifyProductOwnership(id, user.id);
+    if (!owns) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const body: TrackerBody = await request.json();
 
-    // Delete all existing trackers
     const existing = await getProductTrackers(id);
     for (const tracker of existing) {
       await deleteTracker(tracker.id);
     }
 
-    // Create new ones
     const created = await Promise.all(
       (body.trackers || []).map((tracker) =>
         createTracker({

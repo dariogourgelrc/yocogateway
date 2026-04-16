@@ -5,6 +5,7 @@ import { getOrderBumps } from "@/lib/db/order-bumps";
 import { getProductTrackers } from "@/lib/db/product-trackers";
 import { createOrder } from "@/lib/db/orders";
 import { createOrderItems } from "@/lib/db/order-items";
+import { getUserSettings } from "@/lib/db/user-settings";
 import { createStripeSession } from "@/lib/stripe/create-session";
 import { fireServerTrackers } from "@/lib/trackers/server-registry";
 import { createServerClient } from "@/lib/supabase/server";
@@ -34,7 +35,6 @@ export async function POST(
       );
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(buyerEmail)) {
       return NextResponse.json(
@@ -48,10 +48,30 @@ export async function POST(
     const allBumps = await getOrderBumps(productId);
     const trackers = await getProductTrackers(productId);
 
+    // Resolve the product owner's Stripe key
+    if (!product.user_id) {
+      return NextResponse.json(
+        { error: "Product has no owner configured" },
+        { status: 500 }
+      );
+    }
+
+    const userSettings = await getUserSettings(product.user_id);
+    if (!userSettings?.stripe_secret_key) {
+      return NextResponse.json(
+        { error: "Payment not configured for this product" },
+        { status: 500 }
+      );
+    }
+
     // Resolve currency and price (regional pricing support)
     let activeCurrency = product.currency;
     let basePrice = product.price;
-    if (body.currency && body.currency !== product.currency && product.regional_pricing?.[body.currency]) {
+    if (
+      body.currency &&
+      body.currency !== product.currency &&
+      product.regional_pricing?.[body.currency]
+    ) {
       activeCurrency = body.currency;
       basePrice = product.regional_pricing[body.currency];
     }
@@ -70,10 +90,8 @@ export async function POST(
 
     // Calculate total
     const total =
-      basePrice +
-      selectedBumps.reduce((sum, bump) => sum + bump.price, 0);
+      basePrice + selectedBumps.reduce((sum, bump) => sum + bump.price, 0);
 
-    // Merge tracking params with event_id for CAPI dedup
     const trackingParams: TrackingParams & { event_id?: string } = {
       ...(body.tracking_params || {
         src: null,
@@ -119,10 +137,6 @@ export async function POST(
     const orderItems = await createOrderItems(items);
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-
-    // Build line items for Yoco checkout display
-    // Use a generic name for the main product to prevent the merchant name showing up in payment receipts.
-    // Can be customized via NEXT_PUBLIC_PAYMENT_DISPLAY_NAME.
     const paymentDisplayName =
       process.env.NEXT_PUBLIC_PAYMENT_DISPLAY_NAME || "QuoraTech";
 
@@ -139,15 +153,15 @@ export async function POST(
       })),
     ];
 
-    // Build the final destination after payment
-    const finalDestination = product.upsell_url || `${appUrl}/checkout/${product.slug}/success?order_id=${order.id}`;
+    const finalDestination =
+      product.upsell_url ||
+      `${appUrl}/checkout/${product.slug}/success?order_id=${order.id}`;
 
-    // Always route through payment-callback to fire UTMify + notifications
-    // Stripe embedded checkout requires {CHECKOUT_SESSION_ID} in return_url
     const returnUrl = `${appUrl}/api/payment-callback?order_id=${order.id}&session_id={CHECKOUT_SESSION_ID}&redirect_to=${encodeURIComponent(finalDestination)}`;
 
-    // Create Stripe embedded checkout session
+    // Create Stripe session with the product owner's key
     const stripeSession = await createStripeSession({
+      stripeSecretKey: userSettings.stripe_secret_key,
       amountInCents: total,
       currency: activeCurrency,
       returnUrl,
@@ -163,14 +177,13 @@ export async function POST(
       .update({ yoco_payment_id: stripeSession.id })
       .eq("id", order.id);
 
-    // Fire server trackers (orderCreated)
+    // Fire server trackers
     const orderWithItems = {
       ...order,
       yoco_payment_id: stripeSession.id,
       order_items: orderItems,
     };
 
-    // Fire server trackers before responding (must await in serverless)
     await fireServerTrackers("orderCreated", orderWithItems, trackers).catch(
       (err) => console.error("Server tracker onOrderCreated failed:", err)
     );

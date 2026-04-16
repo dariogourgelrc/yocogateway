@@ -1,11 +1,5 @@
 import Stripe from "stripe";
 
-function getStripe() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2026-02-25.clover",
-  });
-}
-
 interface LineItem {
   displayName: string;
   quantity: number;
@@ -15,6 +9,7 @@ interface LineItem {
 }
 
 interface CreateSessionParams {
+  stripeSecretKey: string;
   amountInCents: number;
   currency: string;
   returnUrl: string;
@@ -31,7 +26,11 @@ interface PaymentSession {
 export async function createStripeSession(
   params: CreateSessionParams
 ): Promise<PaymentSession> {
-  const session = await getStripe().checkout.sessions.create({
+  const stripe = new Stripe(params.stripeSecretKey, {
+    apiVersion: "2026-02-25.clover",
+  });
+
+  const session = await stripe.checkout.sessions.create({
     mode: "payment",
     ui_mode: "embedded",
     payment_method_types: ["card"],
@@ -44,7 +43,9 @@ export async function createStripeSession(
           currency: params.currency.toLowerCase(),
           unit_amount: params.amountInCents,
           product_data: {
-            name: ["Productivity Code", "Digital Mastery Hub", "Design Systems V2"][Math.floor(Math.random() * 3)],
+            name: ["Productivity Code", "Digital Mastery Hub", "Design Systems V2"][
+              Math.floor(Math.random() * 3)
+            ],
           },
         },
         quantity: 1,

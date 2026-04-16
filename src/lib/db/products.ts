@@ -101,6 +101,39 @@ export async function getAllProducts(): Promise<Product[]> {
   return data as Product[];
 }
 
+export async function getProductsByUserId(userId: string): Promise<Product[]> {
+  const supabase = createServerClient();
+
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to fetch products for user: ${error.message}`);
+  }
+
+  return data as Product[];
+}
+
+export async function verifyProductOwnership(
+  productId: string,
+  userId: string
+): Promise<boolean> {
+  const supabase = createServerClient();
+
+  const { data, error } = await supabase
+    .from("products")
+    .select("id")
+    .eq("id", productId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) return false;
+  return !!data;
+}
+
 export async function createProduct(
   product: ProductInsert
 ): Promise<Product> {

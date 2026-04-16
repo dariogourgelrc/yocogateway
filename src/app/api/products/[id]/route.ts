@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { updateProduct, deleteProduct } from "@/lib/db/products";
+import { getUserFromRequest } from "@/lib/supabase/server";
+import {
+  updateProduct,
+  deleteProduct,
+  verifyProductOwnership,
+} from "@/lib/db/products";
 import {
   getOrderBumps,
   createOrderBump,
@@ -41,7 +46,18 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
+
+    const owns = await verifyProductOwnership(id, user.id);
+    if (!owns) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const body: UpdateProductBody = await request.json();
 
     const productUpdates: ProductUpdate = {};
@@ -68,21 +84,19 @@ export async function PUT(
 
     const product = await updateProduct(id, productUpdates);
 
-    // Sync order bumps: delete removed, update existing, create new
+    // Sync order bumps
     if (body.order_bumps !== undefined) {
       const existingBumps = await getOrderBumps(id);
       const incomingIds = new Set(
         body.order_bumps.filter((b) => b.id).map((b) => b.id!)
       );
 
-      // Delete bumps not in incoming list
       for (const existing of existingBumps) {
         if (!incomingIds.has(existing.id)) {
           await deleteOrderBump(existing.id);
         }
       }
 
-      // Create or update bumps
       for (let i = 0; i < body.order_bumps.length; i++) {
         const bump = body.order_bumps[i];
         if (bump.id) {
@@ -106,7 +120,7 @@ export async function PUT(
       }
     }
 
-    // Sync trackers: delete all existing, recreate from incoming
+    // Sync trackers
     if (body.trackers !== undefined) {
       const existingTrackers = await getProductTrackers(id);
       for (const tracker of existingTrackers) {
@@ -131,11 +145,22 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
+
+    const owns = await verifyProductOwnership(id, user.id);
+    if (!owns) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     await deleteProduct(id);
     return NextResponse.json({ success: true });
   } catch (err) {
