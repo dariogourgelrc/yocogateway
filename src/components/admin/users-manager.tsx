@@ -19,6 +19,7 @@ export function UsersManager() {
   const [newPassword, setNewPassword] = useState("");
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [copying, setCopying] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     message: string;
@@ -66,6 +67,43 @@ export function UsersManager() {
       });
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleCopyProducts = async (toUserId: string, email: string) => {
+    if (
+      !confirm(
+        `Copiar todos os seus produtos para ${email}?\n\nOs produtos terão slugs diferentes para evitar conflitos.`
+      )
+    )
+      return;
+    setCopying(toUserId);
+    setFeedback(null);
+
+    try {
+      const res = await fetch("/api/admin/copy-products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to_user_id: toUserId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Falha ao copiar produtos");
+      }
+
+      setFeedback({
+        type: "success",
+        message: `${data.copied} produto(s) copiado(s) para ${email}.`,
+      });
+    } catch (err) {
+      setFeedback({
+        type: "error",
+        message: err instanceof Error ? err.message : "Erro ao copiar",
+      });
+    } finally {
+      setCopying(null);
     }
   };
 
@@ -165,14 +203,25 @@ export function UsersManager() {
                       ).toLocaleDateString("pt-BR")}`}
                   </p>
                 </div>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={deleting === u.id}
-                  onClick={() => handleDelete(u.id, u.email)}
-                >
-                  {deleting === u.id ? "..." : "Excluir"}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={copying === u.id}
+                    onClick={() => handleCopyProducts(u.id, u.email)}
+                    title="Copiar meus produtos para este usuário"
+                  >
+                    {copying === u.id ? "Copiando..." : "Copiar Produtos"}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={deleting === u.id}
+                    onClick={() => handleDelete(u.id, u.email)}
+                  >
+                    {deleting === u.id ? "..." : "Excluir"}
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
