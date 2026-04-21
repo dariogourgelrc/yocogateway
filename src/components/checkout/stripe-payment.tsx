@@ -10,10 +10,6 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils/currency";
 import type { ShippingInfo } from "./shipping-form";
 
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-);
-
 interface StripePaymentProps {
   productId: string;
   offerId?: string;
@@ -52,6 +48,7 @@ export function StripePayment({
   onPaymentFailure,
 }: StripePaymentProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [stripePromise, setStripePromise] = useState<ReturnType<typeof loadStripe> | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,7 +79,8 @@ export function StripePayment({
         throw new Error(data.error || "Failed to create checkout");
       }
 
-      const { client_secret } = await res.json();
+      const { client_secret, stripe_publishable_key } = await res.json();
+      setStripePromise(loadStripe(stripe_publishable_key));
       setClientSecret(client_secret);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Payment failed";
@@ -106,7 +104,7 @@ export function StripePayment({
   ]);
 
   // Show embedded checkout once we have the client secret
-  if (clientSecret) {
+  if (clientSecret && stripePromise) {
     return (
       <div className="space-y-3">
         <EmbeddedCheckoutProvider

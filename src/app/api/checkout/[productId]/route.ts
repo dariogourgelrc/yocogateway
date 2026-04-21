@@ -203,6 +203,7 @@ export async function POST(
     return NextResponse.json({
       order_id: order.id,
       client_secret: stripeSession.clientSecret,
+      stripe_publishable_key: userSettings.stripe_publishable_key,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
