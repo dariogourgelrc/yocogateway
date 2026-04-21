@@ -33,22 +33,15 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Use detected currency if it has a regional price, otherwise use product base currency
-  const initialCurrency =
-    detectedCurrency && initialProduct.regional_pricing?.[detectedCurrency]
-      ? detectedCurrency
-      : initialProduct.currency;
+  // Always use detected currency — same price number, just different currency symbol.
+  // If regional_pricing has a specific price for that currency, use it; otherwise keep base price.
+  const initialCurrency = detectedCurrency || initialProduct.currency;
 
   const [activeCurrency, setActiveCurrency] = useState(initialCurrency);
 
-  // Resolve price: offers always use their own price; otherwise base currency uses
-  // product.price and regional currencies use regional_pricing.
-  const activePrice = offerId
-    ? initialProduct.price
-    : activeCurrency === initialProduct.currency
-      ? initialProduct.price
-      : initialProduct.regional_pricing?.[activeCurrency] || initialProduct.price;
-  const product = { ...initialProduct, price: activePrice, currency: offerId ? initialProduct.currency : activeCurrency };
+  const activePrice =
+    initialProduct.regional_pricing?.[activeCurrency] ?? initialProduct.price;
+  const product = { ...initialProduct, price: activePrice, currency: activeCurrency };
 
   const [shippingAddress, setShippingAddress] = useState<ShippingInfo>({
     address_line: "",
