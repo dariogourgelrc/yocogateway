@@ -39,8 +39,11 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
 
   const [activeCurrency, setActiveCurrency] = useState(initialCurrency);
 
-  const activePrice =
-    initialProduct.regional_pricing?.[activeCurrency] ?? initialProduct.price;
+  // Offers: server already overrides initialProduct.price to the offer price — never touch it.
+  // Regular products: use regional price if configured, else use base price.
+  const activePrice = offerId
+    ? initialProduct.price
+    : initialProduct.regional_pricing?.[activeCurrency] ?? initialProduct.price;
   const product = { ...initialProduct, price: activePrice, currency: activeCurrency };
 
   const [shippingAddress, setShippingAddress] = useState<ShippingInfo>({
