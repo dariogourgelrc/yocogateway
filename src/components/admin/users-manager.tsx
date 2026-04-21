@@ -205,7 +205,7 @@ export function UsersManager() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     disabled={copying === u.id}
                     onClick={() => handleCopyProducts(u.id, u.email)}
