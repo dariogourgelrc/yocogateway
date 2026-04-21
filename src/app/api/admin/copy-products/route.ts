@@ -89,6 +89,22 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Copy offers (product_offers), giving each a unique slug
+      const { data: offers } = await supabase
+        .from("product_offers")
+        .select("*")
+        .eq("product_id", _oldId);
+
+      if (offers && offers.length > 0) {
+        await supabase.from("product_offers").insert(
+          offers.map(({ id: _oid, created_at: _oc, updated_at: _ou, slug, ...o }) => ({
+            ...o,
+            product_id: newProduct.id,
+            slug: `${slug}-${to_user_id.slice(0, 6)}`,
+          }))
+        );
+      }
+
       copied++;
     }
 
