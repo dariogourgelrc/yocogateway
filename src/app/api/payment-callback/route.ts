@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrderById, updateOrderStatus } from "@/lib/db/orders";
 import { getProductById } from "@/lib/db/products";
-import { getProductTrackers } from "@/lib/db/product-trackers";
-import { fireServerTrackers } from "@/lib/trackers/server-registry";
 import { sendConfirmationEmail } from "@/lib/notifications/email";
 import { sendWhatsAppConfirmation } from "@/lib/notifications/whatsapp";
 import { sendSaleNotification } from "@/lib/notifications/sale-alert";
@@ -33,14 +31,9 @@ export async function GET(request: NextRequest) {
       }
 
       const product = await getProductById(order.product_id);
-      const trackers = await getProductTrackers(order.product_id);
 
-      // Fire server trackers (UTMify orderPaid)
-      await fireServerTrackers("orderPaid", order, trackers).catch((err) =>
-        console.error("payment-callback: server tracker failed:", err)
-      );
-
-      // Always send notifications from payment-callback (webhook won't send)
+      // Trackers (CAPI, UTMify) are fired exclusively from the Stripe webhook
+      // to avoid double-counting. This route only handles notifications.
       await Promise.allSettled([
         sendConfirmationEmail(order, product),
         sendWhatsAppConfirmation(order, product),
