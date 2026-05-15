@@ -72,6 +72,8 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
     "idle" | "processing" | "success" | "failed"
   >("idle");
   const [eventId] = useState(() => generateEventId());
+  // Upsell mode: buyer data comes pre-filled — collapse the form by default
+  const [editingBuyer, setEditingBuyer] = useState(!recoverData);
 
   // Extract UTM params on mount
   useEffect(() => {
@@ -214,9 +216,25 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
             </div>
           )}
 
-          {/* Buyer form */}
+          {/* Buyer form — collapses to summary when data is pre-filled (upsell mode) */}
           <div className="border-b border-gray-100 px-5 py-4">
-            <BuyerForm value={buyerInfo} onChange={setBuyerInfo} />
+            {!editingBuyer ? (
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{buyerInfo.name}</p>
+                  <p className="text-xs text-gray-500 truncate">{buyerInfo.email} · {buyerInfo.phone}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingBuyer(true)}
+                  className="shrink-0 text-xs text-gray-500 underline hover:text-gray-800"
+                >
+                  Edit
+                </button>
+              </div>
+            ) : (
+              <BuyerForm value={buyerInfo} onChange={setBuyerInfo} />
+            )}
           </div>
 
           {/* Shipping address — only for physical products, shown after buyer form */}
