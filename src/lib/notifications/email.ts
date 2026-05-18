@@ -153,7 +153,7 @@ async function sendPhysicalConfirmationEmail(
   const { error } = await getResend().emails.send({
     from,
     to: order.buyer_email,
-    subject: `Pedido Confirmado — ${product.name} | ${order.id.slice(0, 8).toUpperCase()}`,
+    subject: `🎉 Pedido Confirmado — ${product.name} | #${order.id.slice(0, 8).toUpperCase()}`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -163,16 +163,19 @@ async function sendPhysicalConfirmationEmail(
 
           <!-- Header -->
           <div style="background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:12px 12px 0 0;padding:40px 30px;text-align:center;">
-            <div style="font-size:48px;margin-bottom:10px;">📦</div>
-            <h1 style="color:#ffffff;font-size:24px;margin:0;font-weight:700;">Pedido Confirmado!</h1>
-            <p style="color:#e0e7ff;font-size:14px;margin:8px 0 0;">Seu pagamento foi recebido e seu pedido está sendo preparado</p>
+            <div style="font-size:52px;margin-bottom:12px;">🎉</div>
+            <h1 style="color:#ffffff;font-size:26px;margin:0;font-weight:700;">Parabéns, ${order.buyer_name}!</h1>
+            <p style="color:#e0e7ff;font-size:15px;margin:10px 0 0;">O seu pedido foi confirmado com sucesso. Prepare-se!</p>
           </div>
 
           <!-- Body -->
           <div style="background:#ffffff;padding:30px;border-radius:0 0 12px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
 
-            <p style="font-size:16px;color:#1f2937;margin:0 0 24px;">
-              Olá <strong>${order.buyer_name}</strong>! Recebemos seu pedido com sucesso. 🎉
+            <p style="font-size:16px;color:#1f2937;margin:0 0 8px;line-height:1.6;">
+              Ficamos muito felizes com a sua compra! O seu pedido já está registado no nosso sistema e a nossa equipa vai começar a preparar tudo para si.
+            </p>
+            <p style="font-size:15px;color:#6366f1;font-weight:600;margin:0 0 24px;">
+              Receberá atualizações por email em cada etapa. Fique atento à sua caixa de entrada! 📬
             </p>
 
             <!-- Order Summary -->
@@ -190,57 +193,44 @@ async function sendPhysicalConfirmationEmail(
             <!-- Shipping Address -->
             <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:20px;margin-bottom:20px;">
               <h2 style="font-size:13px;color:#166534;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 10px;">📍 Endereço de Entrega</h2>
-              <p style="font-size:14px;color:#1f2937;margin:0;line-height:1.6;font-weight:500;">${addressBlock}</p>
-              <p style="font-size:12px;color:#4ade80;margin:10px 0 0;">
-                Confirme que o endereço acima está correto. Em caso de erro, entre em contato imediatamente.
-              </p>
+              <p style="font-size:14px;color:#1f2937;margin:0 0 8px;line-height:1.6;font-weight:500;">${addressBlock}</p>
+              <p style="font-size:12px;color:#16a34a;margin:0;">Se precisar de corrigir o endereço, contacte-nos imediatamente pelo suporte abaixo.</p>
             </div>
 
             <!-- What happens next -->
             <div style="background:#fafafa;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin-bottom:20px;">
-              <h2 style="font-size:13px;color:#374151;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 12px;">🚀 Próximos Passos</h2>
-              <table style="width:100%;border-collapse:collapse;">
-                <tr>
-                  <td style="padding:6px 0;font-size:14px;color:#374151;vertical-align:top;">
-                    <span style="color:#6366f1;font-weight:700;margin-right:8px;">1.</span>
-                    Seu pedido será processado e preparado para envio.
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:6px 0;font-size:14px;color:#374151;vertical-align:top;">
-                    <span style="color:#6366f1;font-weight:700;margin-right:8px;">2.</span>
-                    Você receberá uma notificação quando o pedido for despachado.
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:6px 0;font-size:14px;color:#374151;vertical-align:top;">
-                    <span style="color:#6366f1;font-weight:700;margin-right:8px;">3.</span>
-                    Em caso de dúvidas, entre em contato pelo suporte abaixo.
-                  </td>
-                </tr>
-              </table>
+              <h2 style="font-size:13px;color:#374151;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 14px;">🚀 O que acontece a seguir</h2>
+              <div style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
+                <p style="font-size:14px;color:#374151;margin:0;"><span style="color:#6366f1;font-weight:700;">1.</span> A nossa equipa vai preparar e embalar o seu pedido com cuidado.</p>
+              </div>
+              <div style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
+                <p style="font-size:14px;color:#374151;margin:0;"><span style="color:#6366f1;font-weight:700;">2.</span> Receberá um email com os detalhes de envio nas próximas horas.</p>
+              </div>
+              <div style="padding:10px 0;">
+                <p style="font-size:14px;color:#374151;margin:0;"><span style="color:#6366f1;font-weight:700;">3.</span> O seu pedido será entregue no endereço indicado.</p>
+              </div>
             </div>
 
             <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
 
-            <!-- Support -->
-            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:20px;margin-bottom:20px;">
-              <h2 style="font-size:15px;color:#1e40af;margin:0 0 8px;font-weight:700;">Precisa de ajuda?</h2>
-              <p style="font-size:14px;color:#374151;margin:0 0 12px;line-height:1.5;">
-                Nossa equipe está disponível para resolver qualquer questão sobre seu pedido.
+            <!-- Support — primary CTA -->
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:20px;margin-bottom:16px;">
+              <h2 style="font-size:15px;color:#1e40af;margin:0 0 8px;font-weight:700;">Alguma questão sobre o seu pedido?</h2>
+              <p style="font-size:14px;color:#374151;margin:0 0 14px;line-height:1.5;">
+                A nossa equipa de suporte está sempre disponível para si. Resposta garantida em menos de 24 horas!
               </p>
-              <p style="font-size:14px;margin:4px 0;">
+              <p style="font-size:14px;margin:6px 0;">
                 <a href="mailto:${supportEmail}" style="color:#1e40af;font-weight:600;text-decoration:none;">✉ ${supportEmail}</a>
               </p>
-              ${supportPhone ? `<p style="font-size:14px;margin:4px 0;"><a href="${whatsAppLink}" style="color:#16a34a;font-weight:600;text-decoration:none;">💬 ${supportPhone}</a></p>` : ""}
+              ${supportPhone ? `<p style="font-size:14px;margin:6px 0;"><a href="${whatsAppLink}" style="color:#16a34a;font-weight:600;text-decoration:none;">💬 ${supportPhone}</a></p>` : ""}
             </div>
 
-            <!-- Anti-chargeback -->
-            <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:16px;">
-              <p style="font-size:13px;color:#92400e;margin:0;line-height:1.6;text-align:center;">
-                <strong>Guarde este email como comprovante do seu pedido.</strong><br/>
-                Em caso de qualquer dúvida ou problema, entre em contato conosco <strong>antes</strong> de acionar seu banco ou operadora de cartão.<br/>
-                Prometemos resolver rapidamente! 😊
+            <!-- Anti-chargeback — soft, no bank mention -->
+            <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:16px;">
+              <p style="font-size:13px;color:#4c1d95;margin:0;line-height:1.7;text-align:center;">
+                <strong>Guarde este email como comprovante da sua compra.</strong><br/>
+                Para qualquer dúvida, problema ou pedido de alteração — contacte-nos <strong>diretamente</strong>.<br/>
+                A nossa equipa resolve tudo rapidamente! 😊
               </p>
             </div>
 
