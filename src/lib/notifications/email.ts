@@ -43,7 +43,7 @@ async function sendDigitalConfirmationEmail(
     : "";
 
   const totalFormatted = formatCurrency(order.total_amount, order.currency);
-  const orderDate = new Date().toLocaleDateString("pt-BR", {
+  const orderDate = new Date().toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -54,7 +54,7 @@ async function sendDigitalConfirmationEmail(
   const { error } = await getResend().emails.send({
     from,
     to: order.buyer_email,
-    subject: `Compra Confirmada — ${product.name}`,
+    subject: `Purchase Confirmed — ${product.name}`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -64,30 +64,30 @@ async function sendDigitalConfirmationEmail(
 
           <div style="background:linear-gradient(135deg,#10b981,#059669);border-radius:12px 12px 0 0;padding:40px 30px;text-align:center;">
             <div style="font-size:48px;margin-bottom:10px;">✓</div>
-            <h1 style="color:#ffffff;font-size:24px;margin:0;font-weight:700;">Pagamento Confirmado!</h1>
-            <p style="color:#d1fae5;font-size:14px;margin:8px 0 0;">Sua compra foi realizada com sucesso</p>
+            <h1 style="color:#ffffff;font-size:24px;margin:0;font-weight:700;">Payment Confirmed!</h1>
+            <p style="color:#d1fae5;font-size:14px;margin:8px 0 0;">Your purchase was completed successfully</p>
           </div>
 
           <div style="background:#ffffff;padding:30px;border-radius:0 0 12px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
             <p style="font-size:16px;color:#1f2937;margin:0 0 20px;">
-              Olá <strong>${order.buyer_name}</strong>, obrigado pela sua compra!
+              Hi <strong>${order.buyer_name}</strong>, thank you for your purchase!
             </p>
 
             <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin-bottom:24px;">
-              <h2 style="font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 12px;">Detalhes do Pedido</h2>
+              <h2 style="font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 12px;">Order Details</h2>
               <table style="width:100%;border-collapse:collapse;">
-                <tr><td style="padding:6px 0;font-size:14px;color:#6b7280;">Loja</td><td style="padding:6px 0;font-size:14px;color:#111827;text-align:right;font-weight:600;">${storeName}</td></tr>
-                <tr><td style="padding:6px 0;font-size:14px;color:#6b7280;">Produto</td><td style="padding:6px 0;font-size:14px;color:#111827;text-align:right;font-weight:600;">${product.name}</td></tr>
-                <tr><td style="padding:6px 0;font-size:14px;color:#6b7280;">Total Pago</td><td style="padding:6px 0;font-size:14px;color:#111827;text-align:right;font-weight:600;">${totalFormatted}</td></tr>
-                <tr><td style="padding:6px 0;font-size:14px;color:#6b7280;">Data</td><td style="padding:6px 0;font-size:14px;color:#111827;text-align:right;">${orderDate}</td></tr>
-                <tr><td style="padding:6px 0;font-size:14px;color:#6b7280;">Nº do Pedido</td><td style="padding:6px 0;font-size:12px;color:#9ca3af;text-align:right;font-family:monospace;">${order.id.slice(0, 8).toUpperCase()}</td></tr>
+                <tr><td style="padding:6px 0;font-size:14px;color:#6b7280;">Store</td><td style="padding:6px 0;font-size:14px;color:#111827;text-align:right;font-weight:600;">${storeName}</td></tr>
+                <tr><td style="padding:6px 0;font-size:14px;color:#6b7280;">Product</td><td style="padding:6px 0;font-size:14px;color:#111827;text-align:right;font-weight:600;">${product.name}</td></tr>
+                <tr><td style="padding:6px 0;font-size:14px;color:#6b7280;">Total Paid</td><td style="padding:6px 0;font-size:14px;color:#111827;text-align:right;font-weight:600;">${totalFormatted}</td></tr>
+                <tr><td style="padding:6px 0;font-size:14px;color:#6b7280;">Date</td><td style="padding:6px 0;font-size:14px;color:#111827;text-align:right;">${orderDate}</td></tr>
+                <tr><td style="padding:6px 0;font-size:14px;color:#6b7280;">Order No.</td><td style="padding:6px 0;font-size:12px;color:#9ca3af;text-align:right;font-family:monospace;">${order.id.slice(0, 8).toUpperCase()}</td></tr>
               </table>
             </div>
 
             ${deliveryLink ? `
             <div style="text-align:center;margin:28px 0;">
               <a href="${deliveryLink}" style="display:inline-block;padding:16px 40px;background-color:#10b981;color:#ffffff;text-decoration:none;border-radius:8px;font-size:16px;font-weight:700;">
-                Acessar Produto
+                Access Your Product
               </a>
             </div>
             <p style="font-size:13px;color:#9ca3af;text-align:center;margin:0 0 24px;word-break:break-all;">${deliveryLink}</p>
@@ -96,9 +96,9 @@ async function sendDigitalConfirmationEmail(
             <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
 
             <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:20px;margin-bottom:20px;">
-              <h2 style="font-size:15px;color:#1e40af;margin:0 0 8px;font-weight:700;">Precisa de ajuda?</h2>
+              <h2 style="font-size:15px;color:#1e40af;margin:0 0 8px;font-weight:700;">Need help?</h2>
               <p style="font-size:14px;color:#374151;margin:0 0 14px;line-height:1.5;">
-                Em caso de dúvidas, entre em contato diretamente conosco. Estamos aqui para ajudar!
+                If you have any questions, contact us directly. We're here to help!
               </p>
               <p style="font-size:14px;margin:4px 0;">
                 <a href="mailto:${supportEmail}" style="color:#1e40af;font-weight:600;text-decoration:none;">✉ ${supportEmail}</a>
@@ -107,13 +107,13 @@ async function sendDigitalConfirmationEmail(
             </div>
 
             <p style="font-size:12px;color:#9ca3af;text-align:center;line-height:1.6;margin:0;">
-              Guarde este email como comprovante da sua compra.<br/>
-              Em caso de qualquer dúvida, entre em contato conosco <strong>antes</strong> de acionar seu banco ou operadora de cartão — resolveremos rapidamente!
+              Keep this email as proof of your purchase.<br/>
+              For any questions or concerns, contact us <strong>directly</strong> — we resolve everything quickly!
             </p>
           </div>
 
           <div style="text-align:center;padding:20px 0;">
-            <p style="font-size:12px;color:#9ca3af;margin:0;">Recibo automático de compra — ${product.name}</p>
+            <p style="font-size:12px;color:#9ca3af;margin:0;">Automatic purchase receipt — ${product.name}</p>
           </div>
         </div>
       </body>
@@ -139,7 +139,7 @@ async function sendPhysicalConfirmationEmail(
     : "";
 
   const totalFormatted = formatCurrency(order.total_amount, order.currency);
-  const orderDate = new Date().toLocaleDateString("pt-BR", {
+  const orderDate = new Date().toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -153,7 +153,7 @@ async function sendPhysicalConfirmationEmail(
   const { error } = await getResend().emails.send({
     from,
     to: order.buyer_email,
-    subject: `🎉 Pedido Confirmado — ${product.name} | #${order.id.slice(0, 8).toUpperCase()}`,
+    subject: `🎉 Order Confirmed — ${product.name} | #${order.id.slice(0, 8).toUpperCase()}`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -164,60 +164,60 @@ async function sendPhysicalConfirmationEmail(
           <!-- Header -->
           <div style="background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:12px 12px 0 0;padding:40px 30px;text-align:center;">
             <div style="font-size:52px;margin-bottom:12px;">🎉</div>
-            <h1 style="color:#ffffff;font-size:26px;margin:0;font-weight:700;">Parabéns, ${order.buyer_name}!</h1>
-            <p style="color:#e0e7ff;font-size:15px;margin:10px 0 0;">O seu pedido foi confirmado com sucesso. Prepare-se!</p>
+            <h1 style="color:#ffffff;font-size:26px;margin:0;font-weight:700;">Congratulations, ${order.buyer_name}!</h1>
+            <p style="color:#e0e7ff;font-size:15px;margin:10px 0 0;">Your order has been confirmed. Get ready!</p>
           </div>
 
           <!-- Body -->
           <div style="background:#ffffff;padding:30px;border-radius:0 0 12px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
 
             <p style="font-size:16px;color:#1f2937;margin:0 0 8px;line-height:1.6;">
-              Ficamos muito felizes com a sua compra! O seu pedido já está registado no nosso sistema e a nossa equipa vai começar a preparar tudo para si.
+              We're thrilled about your purchase! Your order is now registered in our system and our team will start preparing everything for you.
             </p>
             <p style="font-size:15px;color:#6366f1;font-weight:600;margin:0 0 24px;">
-              Receberá atualizações por email em cada etapa. Fique atento à sua caixa de entrada! 📬
+              You'll receive email updates at every step. Keep an eye on your inbox! 📬
             </p>
 
             <!-- Order Summary -->
             <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin-bottom:20px;">
-              <h2 style="font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 14px;">Resumo do Pedido</h2>
+              <h2 style="font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 14px;">Order Summary</h2>
               <table style="width:100%;border-collapse:collapse;">
-                <tr><td style="padding:7px 0;font-size:14px;color:#6b7280;border-bottom:1px solid #f3f4f6;">Loja</td><td style="padding:7px 0;font-size:14px;color:#111827;text-align:right;font-weight:600;border-bottom:1px solid #f3f4f6;">${storeName}</td></tr>
-                <tr><td style="padding:7px 0;font-size:14px;color:#6b7280;border-bottom:1px solid #f3f4f6;">Produto</td><td style="padding:7px 0;font-size:14px;color:#111827;text-align:right;font-weight:600;border-bottom:1px solid #f3f4f6;">${product.name}</td></tr>
-                <tr><td style="padding:7px 0;font-size:14px;color:#6b7280;border-bottom:1px solid #f3f4f6;">Total Pago</td><td style="padding:7px 0;font-size:15px;color:#111827;text-align:right;font-weight:700;border-bottom:1px solid #f3f4f6;">${totalFormatted}</td></tr>
-                <tr><td style="padding:7px 0;font-size:14px;color:#6b7280;border-bottom:1px solid #f3f4f6;">Data</td><td style="padding:7px 0;font-size:14px;color:#111827;text-align:right;border-bottom:1px solid #f3f4f6;">${orderDate}</td></tr>
-                <tr><td style="padding:7px 0;font-size:13px;color:#6b7280;">Nº do Pedido</td><td style="padding:7px 0;font-size:13px;color:#6366f1;text-align:right;font-family:monospace;font-weight:700;">#${order.id.slice(0, 8).toUpperCase()}</td></tr>
+                <tr><td style="padding:7px 0;font-size:14px;color:#6b7280;border-bottom:1px solid #f3f4f6;">Store</td><td style="padding:7px 0;font-size:14px;color:#111827;text-align:right;font-weight:600;border-bottom:1px solid #f3f4f6;">${storeName}</td></tr>
+                <tr><td style="padding:7px 0;font-size:14px;color:#6b7280;border-bottom:1px solid #f3f4f6;">Product</td><td style="padding:7px 0;font-size:14px;color:#111827;text-align:right;font-weight:600;border-bottom:1px solid #f3f4f6;">${product.name}</td></tr>
+                <tr><td style="padding:7px 0;font-size:14px;color:#6b7280;border-bottom:1px solid #f3f4f6;">Total Paid</td><td style="padding:7px 0;font-size:15px;color:#111827;text-align:right;font-weight:700;border-bottom:1px solid #f3f4f6;">${totalFormatted}</td></tr>
+                <tr><td style="padding:7px 0;font-size:14px;color:#6b7280;border-bottom:1px solid #f3f4f6;">Date</td><td style="padding:7px 0;font-size:14px;color:#111827;text-align:right;border-bottom:1px solid #f3f4f6;">${orderDate}</td></tr>
+                <tr><td style="padding:7px 0;font-size:13px;color:#6b7280;">Order No.</td><td style="padding:7px 0;font-size:13px;color:#6366f1;text-align:right;font-family:monospace;font-weight:700;">#${order.id.slice(0, 8).toUpperCase()}</td></tr>
               </table>
             </div>
 
             <!-- Shipping Address -->
             <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:20px;margin-bottom:20px;">
-              <h2 style="font-size:13px;color:#166534;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 10px;">📍 Endereço de Entrega</h2>
+              <h2 style="font-size:13px;color:#166534;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 10px;">📍 Delivery Address</h2>
               <p style="font-size:14px;color:#1f2937;margin:0 0 8px;line-height:1.6;font-weight:500;">${addressBlock}</p>
-              <p style="font-size:12px;color:#16a34a;margin:0;">Se precisar de corrigir o endereço, contacte-nos imediatamente pelo suporte abaixo.</p>
+              <p style="font-size:12px;color:#16a34a;margin:0;">If you need to correct this address, please contact us immediately using the details below.</p>
             </div>
 
             <!-- What happens next -->
             <div style="background:#fafafa;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin-bottom:20px;">
-              <h2 style="font-size:13px;color:#374151;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 14px;">🚀 O que acontece a seguir</h2>
+              <h2 style="font-size:13px;color:#374151;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 14px;">🚀 What happens next</h2>
               <div style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
-                <p style="font-size:14px;color:#374151;margin:0;"><span style="color:#6366f1;font-weight:700;">1.</span> A nossa equipa vai preparar e embalar o seu pedido com cuidado.</p>
+                <p style="font-size:14px;color:#374151;margin:0;"><span style="color:#6366f1;font-weight:700;">1.</span> Our team will carefully prepare and pack your order.</p>
               </div>
               <div style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
-                <p style="font-size:14px;color:#374151;margin:0;"><span style="color:#6366f1;font-weight:700;">2.</span> Receberá um email com os detalhes de envio nas próximas horas.</p>
+                <p style="font-size:14px;color:#374151;margin:0;"><span style="color:#6366f1;font-weight:700;">2.</span> You will receive an email with shipping details within the next few hours.</p>
               </div>
               <div style="padding:10px 0;">
-                <p style="font-size:14px;color:#374151;margin:0;"><span style="color:#6366f1;font-weight:700;">3.</span> O seu pedido será entregue no endereço indicado.</p>
+                <p style="font-size:14px;color:#374151;margin:0;"><span style="color:#6366f1;font-weight:700;">3.</span> Your order will be delivered to the address above.</p>
               </div>
             </div>
 
             <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
 
-            <!-- Support — primary CTA -->
+            <!-- Support -->
             <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:20px;margin-bottom:16px;">
-              <h2 style="font-size:15px;color:#1e40af;margin:0 0 8px;font-weight:700;">Alguma questão sobre o seu pedido?</h2>
+              <h2 style="font-size:15px;color:#1e40af;margin:0 0 8px;font-weight:700;">Any questions about your order?</h2>
               <p style="font-size:14px;color:#374151;margin:0 0 14px;line-height:1.5;">
-                A nossa equipa de suporte está sempre disponível para si. Resposta garantida em menos de 24 horas!
+                Our support team is always available for you. Guaranteed response within 24 hours!
               </p>
               <p style="font-size:14px;margin:6px 0;">
                 <a href="mailto:${supportEmail}" style="color:#1e40af;font-weight:600;text-decoration:none;">✉ ${supportEmail}</a>
@@ -225,12 +225,12 @@ async function sendPhysicalConfirmationEmail(
               ${supportPhone ? `<p style="font-size:14px;margin:6px 0;"><a href="${whatsAppLink}" style="color:#16a34a;font-weight:600;text-decoration:none;">💬 ${supportPhone}</a></p>` : ""}
             </div>
 
-            <!-- Anti-chargeback — soft, no bank mention -->
+            <!-- Anti-chargeback -->
             <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:16px;">
               <p style="font-size:13px;color:#4c1d95;margin:0;line-height:1.7;text-align:center;">
-                <strong>Guarde este email como comprovante da sua compra.</strong><br/>
-                Para qualquer dúvida, problema ou pedido de alteração — contacte-nos <strong>diretamente</strong>.<br/>
-                A nossa equipa resolve tudo rapidamente! 😊
+                <strong>Keep this email as proof of your purchase.</strong><br/>
+                For any question, issue or change request — contact us <strong>directly</strong>.<br/>
+                Our team resolves everything quickly! 😊
               </p>
             </div>
 
@@ -239,7 +239,7 @@ async function sendPhysicalConfirmationEmail(
           <!-- Footer -->
           <div style="text-align:center;padding:20px 0;">
             <p style="font-size:12px;color:#9ca3af;margin:0;">
-              Pedido <strong>#${order.id.slice(0, 8).toUpperCase()}</strong> — ${storeName}
+              Order <strong>#${order.id.slice(0, 8).toUpperCase()}</strong> — ${storeName}
             </p>
           </div>
         </div>
