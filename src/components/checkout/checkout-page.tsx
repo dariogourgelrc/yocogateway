@@ -241,32 +241,40 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
           </div>
 
 
-          {/* Shipping address — physical products only, shown after buyer form */}
+          {/* Shipping address — physical products only, hidden when pre-filled from external project */}
           {product.type === "physical" &&
+            !recoverData &&
             buyerInfo.name.trim() !== "" &&
             buyerInfo.email.trim() !== "" &&
             buyerInfo.phone.trim() !== "" && (
               <div className="border-b border-gray-100 px-5 py-4">
-                {!editingShipping && recoverData?.address ? (
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-xs text-gray-500 mb-0.5">Delivery address</p>
-                      <p className="text-sm font-medium text-gray-900 truncate">{shippingAddress.address_line}</p>
-                      <p className="text-xs text-gray-500 truncate">{shippingAddress.city} · {shippingAddress.postal_code} · {shippingAddress.country}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setEditingShipping(true)}
-                      className="shrink-0 text-xs text-gray-500 underline hover:text-gray-800"
-                    >
-                      Edit
-                    </button>
-                  </div>
-                ) : (
-                  <ShippingForm value={shippingAddress} onChange={setShippingAddress} />
-                )}
+                <ShippingForm value={shippingAddress} onChange={setShippingAddress} />
               </div>
             )}
+
+          {/* Shipping summary — shown when address was pre-filled from external project */}
+          {product.type === "physical" && recoverData && shippingAddress.address_line && (
+            <div className="border-b border-gray-100 px-5 py-4">
+              {!editingShipping ? (
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-500 mb-0.5">Delivery address</p>
+                    <p className="text-sm font-medium text-gray-900 truncate">{shippingAddress.address_line}</p>
+                    <p className="text-xs text-gray-500 truncate">{shippingAddress.city} · {shippingAddress.postal_code} · {shippingAddress.country}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEditingShipping(true)}
+                    className="shrink-0 text-xs text-gray-500 underline hover:text-gray-800"
+                  >
+                    Edit
+                  </button>
+                </div>
+              ) : (
+                <ShippingForm value={shippingAddress} onChange={setShippingAddress} />
+              )}
+            </div>
+          )}
 
           {/* Order bumps — only shown after buyer fills in the form */}
           {product.order_bumps.length > 0 && formValid && (
