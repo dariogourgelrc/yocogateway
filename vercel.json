@@ -5,15 +5,6 @@
     },
     "src/app/api/checkout/*/route.ts": {
       "maxDuration": 15
-    },
-    "src/app/api/cron/physical-followup/route.ts": {
-      "maxDuration": 60
     }
-  },
-  "crons": [
-    {
-      "path": "/api/cron/physical-followup",
-      "schedule": "0 * * * *"
-    }
-  ]
+  }
 }
