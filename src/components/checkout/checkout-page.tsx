@@ -26,7 +26,12 @@ interface CheckoutPageProps {
   product: ProductWithBumpsAndTrackers;
   detectedCurrency?: string | null;
   offerId?: string;
-  recoverData?: { name: string; email: string; phone: string };
+  recoverData?: {
+    name: string;
+    email: string;
+    phone: string;
+    address?: { address_line: string; city: string; postal_code: string; country: string };
+  };
 }
 
 export function CheckoutPage({ product: initialProduct, detectedCurrency, offerId, recoverData }: CheckoutPageProps) {
@@ -46,12 +51,9 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
     : initialProduct.regional_pricing?.[activeCurrency] ?? initialProduct.price;
   const product = { ...initialProduct, price: activePrice, currency: activeCurrency };
 
-  const [shippingAddress, setShippingAddress] = useState<ShippingInfo>({
-    address_line: "",
-    city: "",
-    postal_code: "",
-    country: "",
-  });
+  const [shippingAddress, setShippingAddress] = useState<ShippingInfo>(
+    recoverData?.address || { address_line: "", city: "", postal_code: "", country: "" }
+  );
 
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
   const [buyerInfo, setBuyerInfo] = useState<BuyerInfo>({
@@ -72,8 +74,9 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
     "idle" | "processing" | "success" | "failed"
   >("idle");
   const [eventId] = useState(() => generateEventId());
-  // Upsell mode: buyer data comes pre-filled — collapse the form by default
+  // Collapse forms when data arrives pre-filled (upsell / external project)
   const [editingBuyer, setEditingBuyer] = useState(!recoverData);
+  const [editingShipping, setEditingShipping] = useState(!recoverData?.address);
 
   // Extract UTM params on mount
   useEffect(() => {
@@ -243,10 +246,27 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
             buyerInfo.email.trim() !== "" &&
             buyerInfo.phone.trim() !== "" && (
               <div className="border-b border-gray-100 px-5 py-4">
-                <ShippingForm
-                  value={shippingAddress}
-                  onChange={setShippingAddress}
-                />
+                {!editingShipping && recoverData?.address ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs text-gray-500 mb-0.5">Delivery address</p>
+                      <p className="text-sm font-medium text-gray-900 truncate">{shippingAddress.address_line}</p>
+                      <p className="text-xs text-gray-500 truncate">{shippingAddress.city} · {shippingAddress.postal_code} · {shippingAddress.country}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditingShipping(true)}
+                      className="shrink-0 text-xs text-gray-500 underline hover:text-gray-800"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                ) : (
+                  <ShippingForm
+                    value={shippingAddress}
+                    onChange={setShippingAddress}
+                  />
+                )}
               </div>
             )}
 

@@ -40,10 +40,18 @@ export default async function CheckoutPageRoute({
     prefill_name?: string;
     prefill_email?: string;
     prefill_phone?: string;
+    prefill_address?: string;
+    prefill_city?: string;
+    prefill_postal?: string;
+    prefill_country?: string;
   }>;
 }) {
   const { slug } = await params;
-  const { recover, prefill_name, prefill_email, prefill_phone } = await searchParams;
+  const {
+    recover,
+    prefill_name, prefill_email, prefill_phone,
+    prefill_address, prefill_city, prefill_postal, prefill_country,
+  } = await searchParams;
 
   let product;
   try {
@@ -62,13 +70,31 @@ export default async function CheckoutPageRoute({
     ({ config, ...rest }) => ({ ...rest, config: null })
   );
 
-  // Pre-fill buyer data from abandoned order or upsell redirect
-  let recoverData: { name: string; email: string; phone: string } | undefined;
+  // Pre-fill buyer data from abandoned order, upsell redirect, or external project
+  let recoverData:
+    | {
+        name: string;
+        email: string;
+        phone: string;
+        address?: { address_line: string; city: string; postal_code: string; country: string };
+      }
+    | undefined;
+
   if (prefill_name && prefill_email && prefill_phone) {
     recoverData = {
       name: prefill_name,
       email: prefill_email,
       phone: prefill_phone,
+      ...(prefill_address && prefill_city
+        ? {
+            address: {
+              address_line: prefill_address,
+              city: prefill_city,
+              postal_code: prefill_postal || "",
+              country: prefill_country || "South Africa",
+            },
+          }
+        : {}),
     };
   } else if (recover) {
     try {
