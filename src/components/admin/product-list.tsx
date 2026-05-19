@@ -49,6 +49,24 @@ export function ProductList({ initialProducts }: ProductListProps) {
   const router = useRouter();
   const [products, setProducts] = useState(initialProducts);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [duplicating, setDuplicating] = useState<string | null>(null);
+
+  const handleDuplicate = async (id: string) => {
+    setDuplicating(id);
+    try {
+      const res = await fetch(`/api/products/${id}/duplicate`, { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Duplicate failed");
+      }
+      const newProduct = await res.json();
+      setProducts((prev) => [newProduct, ...prev]);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Duplicate failed");
+    } finally {
+      setDuplicating(null);
+    }
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this product?")) return;
@@ -135,6 +153,14 @@ export function ProductList({ initialProducts }: ProductListProps) {
                     }
                   >
                     Integrations
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={duplicating === product.id}
+                    onClick={() => handleDuplicate(product.id)}
+                  >
+                    {duplicating === product.id ? "..." : "Duplicate"}
                   </Button>
                   <Button
                     variant="destructive"
