@@ -48,20 +48,29 @@ export async function POST(
     const allBumps = await getOrderBumps(productId);
     const trackers = await getProductTrackers(productId);
 
-    // Resolve the product owner's Stripe key
-    if (!product.user_id) {
-      return NextResponse.json(
-        { error: "Product has no owner configured" },
-        { status: 500 }
-      );
-    }
+    // Resolve Stripe keys: product-level override takes priority over user settings
+    let stripeSecretKey: string;
+    let stripePublishableKey: string;
 
-    const userSettings = await getUserSettings(product.user_id);
-    if (!userSettings?.stripe_secret_key) {
-      return NextResponse.json(
-        { error: "Payment not configured for this product" },
-        { status: 500 }
-      );
+    if (product.stripe_secret_key && product.stripe_publishable_key) {
+      stripeSecretKey = product.stripe_secret_key;
+      stripePublishableKey = product.stripe_publishable_key;
+    } else {
+      if (!product.user_id) {
+        return NextResponse.json(
+          { error: "Product has no owner configured" },
+          { status: 500 }
+        );
+      }
+      const userSettings = await getUserSettings(product.user_id);
+      if (!userSettings?.stripe_secret_key) {
+        return NextResponse.json(
+          { error: "Payment not configured for this product" },
+          { status: 500 }
+        );
+      }
+      stripeSecretKey = userSettings.stripe_secret_key;
+      stripePublishableKey = userSettings.stripe_publishable_key;
     }
 
     // For physical products, require shipping address
@@ -171,9 +180,9 @@ export async function POST(
 
     const returnUrl = `${appUrl}/api/payment-callback?order_id=${order.id}&session_id={CHECKOUT_SESSION_ID}&redirect_to=${encodeURIComponent(finalDestination)}`;
 
-    // Create Stripe session with the product owner's key
+    // Create Stripe session
     const stripeSession = await createStripeSession({
-      stripeSecretKey: userSettings.stripe_secret_key,
+      stripeSecretKey: stripeSecretKey,
       amountInCents: total,
       currency: activeCurrency,
       returnUrl,
@@ -203,7 +212,7 @@ export async function POST(
     return NextResponse.json({
       order_id: order.id,
       client_secret: stripeSession.clientSecret,
-      stripe_publishable_key: userSettings.stripe_publishable_key,
+      stripe_publishable_key: stripePublishableKey,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

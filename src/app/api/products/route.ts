@@ -65,6 +65,9 @@ export async function POST(request: NextRequest) {
       remarketing_offer_1: null,
       remarketing_offer_2: null,
       remarketing_offer_3: null,
+      stripe_secret_key: null,
+      stripe_publishable_key: null,
+      stripe_webhook_secret: null,
     };
 
     const product = await createProduct(productData);

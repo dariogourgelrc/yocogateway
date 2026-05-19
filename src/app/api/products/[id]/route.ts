@@ -41,6 +41,9 @@ interface UpdateProductBody {
   remarketing_offer_1?: string | null;
   remarketing_offer_2?: string | null;
   remarketing_offer_3?: string | null;
+  stripe_secret_key?: string | null;
+  stripe_publishable_key?: string | null;
+  stripe_webhook_secret?: string | null;
   order_bumps?: (Omit<OrderBumpInsert, "product_id"> & { id?: string })[];
   trackers?: (Omit<ProductTrackerInsert, "product_id"> & { id?: string })[];
 }
@@ -89,6 +92,12 @@ export async function PUT(
       productUpdates.remarketing_offer_2 = body.remarketing_offer_2;
     if (body.remarketing_offer_3 !== undefined)
       productUpdates.remarketing_offer_3 = body.remarketing_offer_3;
+    if (body.stripe_secret_key !== undefined)
+      productUpdates.stripe_secret_key = body.stripe_secret_key;
+    if (body.stripe_publishable_key !== undefined)
+      productUpdates.stripe_publishable_key = body.stripe_publishable_key;
+    if (body.stripe_webhook_secret !== undefined)
+      productUpdates.stripe_webhook_secret = body.stripe_webhook_secret;
 
     const product = await updateProduct(id, productUpdates);
 

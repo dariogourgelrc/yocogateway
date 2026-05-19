@@ -30,6 +30,9 @@ export interface Product {
   remarketing_offer_1: string | null; // product_offers.id
   remarketing_offer_2: string | null;
   remarketing_offer_3: string | null;
+  stripe_secret_key: string | null;
+  stripe_publishable_key: string | null;
+  stripe_webhook_secret: string | null;
   created_at: string;
   updated_at: string;
 }

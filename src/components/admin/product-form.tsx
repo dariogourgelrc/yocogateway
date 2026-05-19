@@ -71,6 +71,14 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
   const [supportEmail, setSupportEmail] = useState(initialData?.support_email || "");
   const [supportPhone, setSupportPhone] = useState(initialData?.support_phone || "");
 
+  const [customStripeEnabled, setCustomStripeEnabled] = useState(
+    !!(initialData?.stripe_secret_key || initialData?.stripe_publishable_key)
+  );
+  const [stripeSecretKey, setStripeSecretKey] = useState(initialData?.stripe_secret_key || "");
+  const [stripePublishableKey, setStripePublishableKey] = useState(initialData?.stripe_publishable_key || "");
+  const [stripeWebhookSecret, setStripeWebhookSecret] = useState(initialData?.stripe_webhook_secret || "");
+  const [copiedWebhook, setCopiedWebhook] = useState(false);
+
   const [orderBumps, setOrderBumps] = useState<OrderBumpData[]>(
     initialData?.order_bumps?.map((b) => ({
       id: b.id,
@@ -152,6 +160,9 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
       remarketing_offer_1: remarketingOffer1 || null,
       remarketing_offer_2: remarketingOffer2 || null,
       remarketing_offer_3: remarketingOffer3 || null,
+      stripe_secret_key: customStripeEnabled ? stripeSecretKey || null : null,
+      stripe_publishable_key: customStripeEnabled ? stripePublishableKey || null : null,
+      stripe_webhook_secret: customStripeEnabled ? stripeWebhookSecret || null : null,
       order_bumps: orderBumps.map((b) => ({
         ...b,
         price: Math.round(parseFloat(b.price as unknown as string || "0") * 100),
@@ -375,6 +386,79 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
           </div>
         </div>
       </Card>
+
+      {/* Custom Stripe Account — edit mode only (needs product ID for webhook URL) */}
+      {mode === "edit" && initialData && (
+        <Card>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-lg font-semibold">Custom Stripe Account</h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Override the account-level Stripe keys for this product only.
+              </p>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={customStripeEnabled}
+                onChange={(e) => setCustomStripeEnabled(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+              />
+              <span className="text-sm font-medium text-gray-700">Enable</span>
+            </label>
+          </div>
+
+          {customStripeEnabled && (
+            <div className="space-y-4 border-t border-gray-100 pt-4">
+              <Input
+                label="Secret Key"
+                type="password"
+                value={stripeSecretKey}
+                onChange={(e) => setStripeSecretKey(e.target.value)}
+                placeholder="sk_live_..."
+              />
+              <Input
+                label="Publishable Key"
+                value={stripePublishableKey}
+                onChange={(e) => setStripePublishableKey(e.target.value)}
+                placeholder="pk_live_..."
+              />
+              <Input
+                label="Webhook Secret"
+                type="password"
+                value={stripeWebhookSecret}
+                onChange={(e) => setStripeWebhookSecret(e.target.value)}
+                placeholder="whsec_..."
+              />
+              <div>
+                <p className="text-xs font-medium text-gray-600 mb-1">Webhook URL</p>
+                <p className="text-xs text-gray-500 mb-2">
+                  Add this endpoint in your Stripe dashboard under{" "}
+                  <span className="font-medium">Developers → Webhooks → Add endpoint</span>.
+                  Enable the <span className="font-mono bg-gray-100 px-1 rounded">checkout.session.completed</span> event.
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 break-all text-gray-700">
+                    {(process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : ""))}/api/webhooks/stripe/product/{initialData.id}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const url = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/api/webhooks/stripe/product/${initialData.id}`;
+                      await navigator.clipboard.writeText(url);
+                      setCopiedWebhook(true);
+                      setTimeout(() => setCopiedWebhook(false), 2000);
+                    }}
+                    className="shrink-0 text-xs rounded-lg border border-gray-200 px-3 py-2 hover:bg-gray-50 transition-colors"
+                  >
+                    {copiedWebhook ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Smart Recovery Funnel */}
       {mode === "edit" && (
