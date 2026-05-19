@@ -44,6 +44,7 @@ interface UpdateProductBody {
   stripe_secret_key?: string | null;
   stripe_publishable_key?: string | null;
   stripe_webhook_secret?: string | null;
+  exit_intent_offer_id?: string | null;
   order_bumps?: (Omit<OrderBumpInsert, "product_id"> & { id?: string })[];
   trackers?: (Omit<ProductTrackerInsert, "product_id"> & { id?: string })[];
 }
@@ -98,6 +99,8 @@ export async function PUT(
       productUpdates.stripe_publishable_key = body.stripe_publishable_key;
     if (body.stripe_webhook_secret !== undefined)
       productUpdates.stripe_webhook_secret = body.stripe_webhook_secret;
+    if (body.exit_intent_offer_id !== undefined)
+      productUpdates.exit_intent_offer_id = body.exit_intent_offer_id;
 
     const product = await updateProduct(id, productUpdates);
 

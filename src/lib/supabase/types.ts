@@ -33,6 +33,7 @@ export interface Product {
   stripe_secret_key: string | null;
   stripe_publishable_key: string | null;
   stripe_webhook_secret: string | null;
+  exit_intent_offer_id: string | null;
   created_at: string;
   updated_at: string;
 }

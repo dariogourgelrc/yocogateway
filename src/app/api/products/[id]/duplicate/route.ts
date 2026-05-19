@@ -53,6 +53,7 @@ export async function POST(
       stripe_secret_key: null,
       stripe_publishable_key: null,
       stripe_webhook_secret: null,
+      exit_intent_offer_id: null,
     });
 
     await Promise.all(

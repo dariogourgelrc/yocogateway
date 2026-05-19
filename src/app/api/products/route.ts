@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
       stripe_secret_key: null,
       stripe_publishable_key: null,
       stripe_webhook_secret: null,
+      exit_intent_offer_id: null,
     };
 
     const product = await createProduct(productData);

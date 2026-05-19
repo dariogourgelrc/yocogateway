@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { getProductBySlug } from "@/lib/db/products";
 import { getOrderById } from "@/lib/db/orders";
+import { getOfferById } from "@/lib/db/product-offers";
 import { CheckoutPage } from "@/components/checkout/checkout-page";
 import type { Metadata } from "next";
 
@@ -111,12 +112,18 @@ export default async function CheckoutPageRoute({
     }
   }
 
+  // Fetch exit intent offer if configured
+  const exitIntentOffer = product.exit_intent_offer_id
+    ? await getOfferById(product.exit_intent_offer_id).catch(() => null)
+    : null;
+
   return (
     <CheckoutPage
       product={product}
       detectedCurrency={detectedCurrency}
       offerId={product.activeOffer?.id}
       recoverData={recoverData}
+      exitIntentOffer={exitIntentOffer ?? undefined}
     />
   );
 }

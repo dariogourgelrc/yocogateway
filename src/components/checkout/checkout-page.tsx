@@ -11,9 +11,11 @@ import { StripePayment } from "./stripe-payment";
 import { useTracker } from "@/hooks/use-tracker";
 import { extractUtmParams } from "@/lib/trackers/utm";
 import { generateEventId } from "@/lib/utils/event-id";
+import { formatCurrency } from "@/lib/utils/currency";
 import type {
   ProductWithBumpsAndTrackers,
   TrackingParams,
+  ProductOffer,
 } from "@/lib/supabase/types";
 
 const CURRENCY_OPTIONS = [
@@ -32,9 +34,10 @@ interface CheckoutPageProps {
     phone: string;
     address?: { address_line: string; city: string; postal_code: string; country: string };
   };
+  exitIntentOffer?: ProductOffer;
 }
 
-export function CheckoutPage({ product: initialProduct, detectedCurrency, offerId, recoverData }: CheckoutPageProps) {
+export function CheckoutPage({ product: initialProduct, detectedCurrency, offerId, recoverData, exitIntentOffer }: CheckoutPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -77,6 +80,21 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
   // Collapse forms when data arrives pre-filled (upsell / external project)
   const [editingBuyer, setEditingBuyer] = useState(!recoverData);
   const [editingShipping, setEditingShipping] = useState(!recoverData?.address);
+
+  // Exit intent modal
+  const [showExitIntent, setShowExitIntent] = useState(false);
+
+  useEffect(() => {
+    if (!exitIntentOffer) return;
+    let shown = false;
+    const handleMouseLeave = (e: MouseEvent) => {
+      if (shown || e.clientY > 20) return;
+      shown = true;
+      setShowExitIntent(true);
+    };
+    document.addEventListener("mouseleave", handleMouseLeave);
+    return () => document.removeEventListener("mouseleave", handleMouseLeave);
+  }, [exitIntentOffer]);
 
   // Extract UTM params on mount
   useEffect(() => {
@@ -184,6 +202,75 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Exit intent modal */}
+      {showExitIntent && exitIntentOffer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <button
+              onClick={() => setShowExitIntent(false)}
+              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
+              aria-label="Close"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {product.image_url && (
+              <div className="mb-4 flex justify-center">
+                <img src={product.image_url} alt={product.name} className="h-20 w-20 rounded-xl object-contain" />
+              </div>
+            )}
+
+            <h2 className="mb-1 text-center text-xl font-bold text-gray-900">Wait! Special offer</h2>
+            <p className="mb-5 text-center text-sm text-gray-500">Don&apos;t miss this one-time opportunity</p>
+
+            <div className="mb-5 rounded-xl border border-blue-100 bg-blue-50 px-4 py-4 text-center">
+              {(() => {
+                const discountPct = Math.round((1 - exitIntentOffer.price / product.price) * 100);
+                const savings = product.price - exitIntentOffer.price;
+                return (
+                  <>
+                    {discountPct > 0 && (
+                      <span className="mb-2 inline-block rounded-full bg-blue-600 px-3 py-0.5 text-xs font-bold text-white">
+                        {discountPct}% OFF
+                      </span>
+                    )}
+                    <div className="mt-1 flex items-center justify-center gap-3">
+                      <span className="text-sm text-gray-400 line-through">{formatCurrency(product.price, product.currency)}</span>
+                      <span className="text-2xl font-black text-gray-900">{formatCurrency(exitIntentOffer.price, product.currency)}</span>
+                    </div>
+                    {savings > 0 && (
+                      <p className="mt-1 text-xs text-blue-600">You save {formatCurrency(savings, product.currency)}!</p>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+
+            <button
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (buyerInfo.name) params.set("prefill_name", buyerInfo.name);
+                if (buyerInfo.email) params.set("prefill_email", buyerInfo.email);
+                if (buyerInfo.phone) params.set("prefill_phone", buyerInfo.phone);
+                const qs = params.toString();
+                window.location.href = `/checkout/${exitIntentOffer.slug}${qs ? "?" + qs : ""}`;
+              }}
+              className="mb-3 w-full rounded-full bg-blue-600 py-3 text-base font-bold text-white hover:bg-blue-700 active:scale-[0.98] transition-all"
+            >
+              I want the discount!
+            </button>
+            <button
+              onClick={() => setShowExitIntent(false)}
+              className="w-full text-center text-sm text-gray-400 hover:text-gray-600"
+            >
+              No thanks, I prefer to pay full price.
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="mx-auto max-w-md px-4 py-8">
         <div className="overflow-hidden rounded-xl bg-white shadow-sm">
           {/* Product header */}

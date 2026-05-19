@@ -71,6 +71,8 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
   const [supportEmail, setSupportEmail] = useState(initialData?.support_email || "");
   const [supportPhone, setSupportPhone] = useState(initialData?.support_phone || "");
 
+  const [exitIntentOfferId, setExitIntentOfferId] = useState(initialData?.exit_intent_offer_id || "");
+
   const [customStripeEnabled, setCustomStripeEnabled] = useState(
     !!(initialData?.stripe_secret_key || initialData?.stripe_publishable_key)
   );
@@ -160,6 +162,7 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
       remarketing_offer_1: remarketingOffer1 || null,
       remarketing_offer_2: remarketingOffer2 || null,
       remarketing_offer_3: remarketingOffer3 || null,
+      exit_intent_offer_id: exitIntentOfferId || null,
       stripe_secret_key: customStripeEnabled ? stripeSecretKey || null : null,
       stripe_publishable_key: customStripeEnabled ? stripePublishableKey || null : null,
       stripe_webhook_secret: customStripeEnabled ? stripeWebhookSecret || null : null,
@@ -457,6 +460,37 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
               </div>
             </div>
           )}
+        </Card>
+      )}
+
+      {/* Exit Intent Offer */}
+      {mode === "edit" && (
+        <Card>
+          <h2 className="mb-1 text-lg font-semibold">Exit Intent Offer</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Show a discount popup when the buyer tries to leave the checkout page.
+            Create an offer first, then select it here.
+          </p>
+          <div className="space-y-1">
+            <Label>Offer to show on exit</Label>
+            <select
+              value={exitIntentOfferId}
+              onChange={(e) => setExitIntentOfferId(e.target.value)}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1"
+            >
+              <option value="">Disabled</option>
+              {offers.map((offer) => (
+                <option key={offer.id} value={offer.id}>
+                  {offer.name} — {(offer.price / 100).toFixed(2)} {currency}
+                </option>
+              ))}
+            </select>
+            {offers.length === 0 && (
+              <p className="text-xs text-amber-600 mt-1">
+                No offers yet. Go to Offers to create one first.
+              </p>
+            )}
+          </div>
         </Card>
       )}
 
