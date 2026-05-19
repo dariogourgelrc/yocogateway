@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ProductInfo } from "./product-info";
 import { OrderBumpCard } from "./order-bump-card";
 import { BuyerForm, type BuyerInfo } from "./buyer-form";
-import { ShippingForm, type ShippingInfo } from "./shipping-form";
+import type { ShippingInfo } from "./shipping-form";
 import { OrderSummary } from "./order-summary";
 import { StripePayment } from "./stripe-payment";
 import { useTracker } from "@/hooks/use-tracker";
@@ -74,9 +74,8 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
     "idle" | "processing" | "success" | "failed"
   >("idle");
   const [eventId] = useState(() => generateEventId());
-  // Collapse forms when data arrives pre-filled (upsell / external project)
+  // Collapse buyer form when data arrives pre-filled (upsell / external project)
   const [editingBuyer, setEditingBuyer] = useState(!recoverData);
-  const [editingShipping, setEditingShipping] = useState(!recoverData?.address);
 
   // Extract UTM params on mount
   useEffect(() => {
@@ -120,18 +119,10 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
     [product.price, selectedBumpsList]
   );
 
-  const shippingValid =
-    product.type !== "physical" ||
-    (shippingAddress.address_line.trim() !== "" &&
-      shippingAddress.city.trim() !== "" &&
-      shippingAddress.postal_code.trim() !== "" &&
-      shippingAddress.country.trim() !== "");
-
   const formValid =
     buyerInfo.name.trim() !== "" &&
     buyerInfo.email.trim() !== "" &&
-    buyerInfo.phone.trim() !== "" &&
-    shippingValid;
+    buyerInfo.phone.trim() !== "";
 
   const toggleBump = useCallback((bumpId: string) => {
     setSelectedBumps((prev) => {
@@ -240,35 +231,6 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
             )}
           </div>
 
-          {/* Shipping address — only for physical products, shown after buyer form */}
-          {product.type === "physical" &&
-            buyerInfo.name.trim() !== "" &&
-            buyerInfo.email.trim() !== "" &&
-            buyerInfo.phone.trim() !== "" && (
-              <div className="border-b border-gray-100 px-5 py-4">
-                {!editingShipping && recoverData?.address ? (
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-xs text-gray-500 mb-0.5">Delivery address</p>
-                      <p className="text-sm font-medium text-gray-900 truncate">{shippingAddress.address_line}</p>
-                      <p className="text-xs text-gray-500 truncate">{shippingAddress.city} · {shippingAddress.postal_code} · {shippingAddress.country}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setEditingShipping(true)}
-                      className="shrink-0 text-xs text-gray-500 underline hover:text-gray-800"
-                    >
-                      Edit
-                    </button>
-                  </div>
-                ) : (
-                  <ShippingForm
-                    value={shippingAddress}
-                    onChange={setShippingAddress}
-                  />
-                )}
-              </div>
-            )}
 
           {/* Order bumps — only shown after buyer fills in the form */}
           {product.order_bumps.length > 0 && formValid && (
@@ -316,7 +278,7 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
                 buyerEmail={buyerInfo.email}
                 buyerPhone={buyerInfo.phone}
                 selectedBumpIds={Array.from(selectedBumps)}
-                shippingAddress={product.type === "physical" ? shippingAddress : undefined}
+                shippingAddress={shippingAddress.address_line ? shippingAddress : undefined}
                 trackingParams={
                   trackingParams as unknown as Record<string, unknown>
                 }
