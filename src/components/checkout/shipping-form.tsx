@@ -18,11 +18,11 @@ export function ShippingForm({ value, onChange }: ShippingFormProps) {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm font-semibold text-gray-900">Endereço de entrega</p>
+      <p className="text-sm font-semibold text-gray-900">Shipping address</p>
 
       <input
         type="text"
-        placeholder="Endereço (rua e número)"
+        placeholder="Address (street and number)"
         value={value.address_line}
         onChange={set("address_line")}
         required
@@ -32,7 +32,7 @@ export function ShippingForm({ value, onChange }: ShippingFormProps) {
       <div className="grid grid-cols-2 gap-3">
         <input
           type="text"
-          placeholder="Cidade"
+          placeholder="City"
           value={value.city}
           onChange={set("city")}
           required
@@ -40,7 +40,7 @@ export function ShippingForm({ value, onChange }: ShippingFormProps) {
         />
         <input
           type="text"
-          placeholder="CEP / Código postal"
+          placeholder="ZIP / Postal code"
           value={value.postal_code}
           onChange={set("postal_code")}
           required
@@ -50,7 +50,7 @@ export function ShippingForm({ value, onChange }: ShippingFormProps) {
 
       <input
         type="text"
-        placeholder="País"
+        placeholder="Country"
         value={value.country}
         onChange={set("country")}
         required
