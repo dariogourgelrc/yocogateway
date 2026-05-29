@@ -1,4 +1,3 @@
-import { formatCurrency } from "@/lib/utils/currency";
 import type { OrderBump } from "@/lib/supabase/types";
 
 interface OrderBumpCardProps {
@@ -39,9 +38,6 @@ export function OrderBumpCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <p className="font-medium text-gray-900">{bump.name}</p>
-            <p className="font-semibold text-gray-900 flex-shrink-0">
-              + {formatCurrency(bump.price, currency)}
-            </p>
           </div>
           {bump.description && (
             <p className="mt-1 text-sm text-gray-500">{bump.description}</p>

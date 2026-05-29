@@ -11,7 +11,6 @@ import { StripePayment } from "./stripe-payment";
 import { useTracker } from "@/hooks/use-tracker";
 import { extractUtmParams } from "@/lib/trackers/utm";
 import { generateEventId } from "@/lib/utils/event-id";
-import { formatCurrency } from "@/lib/utils/currency";
 import type {
   ProductWithBumpsAndTrackers,
   TrackingParams,
@@ -226,26 +225,10 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
             <p className="mb-5 text-center text-sm text-gray-500">Don&apos;t miss this one-time opportunity</p>
 
             <div className="mb-5 rounded-xl border border-blue-100 bg-blue-50 px-4 py-4 text-center">
-              {(() => {
-                const discountPct = Math.round((1 - exitIntentOffer.price / product.price) * 100);
-                const savings = product.price - exitIntentOffer.price;
-                return (
-                  <>
-                    {discountPct > 0 && (
-                      <span className="mb-2 inline-block rounded-full bg-blue-600 px-3 py-0.5 text-xs font-bold text-white">
-                        {discountPct}% OFF
-                      </span>
-                    )}
-                    <div className="mt-1 flex items-center justify-center gap-3">
-                      <span className="text-sm text-gray-400 line-through">{formatCurrency(product.price, product.currency)}</span>
-                      <span className="text-2xl font-black text-gray-900">{formatCurrency(exitIntentOffer.price, product.currency)}</span>
-                    </div>
-                    {savings > 0 && (
-                      <p className="mt-1 text-xs text-blue-600">You save {formatCurrency(savings, product.currency)}!</p>
-                    )}
-                  </>
-                );
-              })()}
+              <span className="inline-block rounded-full bg-blue-600 px-3 py-0.5 text-xs font-bold text-white">
+                EXCLUSIVE DISCOUNT
+              </span>
+              <p className="mt-2 text-sm text-gray-600">A special price reserved just for you</p>
             </div>
 
             <button

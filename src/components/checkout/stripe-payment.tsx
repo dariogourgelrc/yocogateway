@@ -7,7 +7,6 @@ import {
   EmbeddedCheckout,
 } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/utils/currency";
 import type { ShippingInfo } from "./shipping-form";
 
 interface StripePaymentProps {
@@ -149,7 +148,7 @@ export function StripePayment({
             Processing...
           </span>
         ) : (
-          `Pay ${formatCurrency(total, currency)}`
+          "Complete purchase"
         )}
       </Button>
 

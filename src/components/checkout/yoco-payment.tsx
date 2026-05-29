@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/utils/currency";
 
 interface YocoPaymentProps {
   productId: string;
@@ -122,7 +121,7 @@ export function YocoPayment({
             Processing...
           </span>
         ) : (
-          `Pay ${formatCurrency(total, currency)}`
+          "Complete purchase"
         )}
       </Button>
 
