@@ -99,7 +99,6 @@ export async function sendPhysicalShippingEmail(info: PhysicalOrderInfo) {
               <p style="font-size:14px;margin:4px 0;">
                 <a href="mailto:${info.supportEmail}" style="color:#1e40af;font-weight:600;text-decoration:none;">✉ ${info.supportEmail}</a>
               </p>
-              ${info.supportPhone ? `<p style="font-size:14px;margin:4px 0;"><a href="${info.whatsAppLink}" style="color:#16a34a;font-weight:600;text-decoration:none;">💬 ${info.supportPhone}</a></p>` : ""}
             </div>
 
           </div>
@@ -175,7 +174,6 @@ export async function sendPhysicalDelayEmail(info: PhysicalOrderInfo) {
               <p style="font-size:14px;margin:4px 0;">
                 <a href="mailto:${info.supportEmail}" style="color:#1e40af;font-weight:600;text-decoration:none;">✉ ${info.supportEmail}</a>
               </p>
-              ${info.supportPhone ? `<p style="font-size:14px;margin:4px 0;"><a href="${info.whatsAppLink}" style="color:#16a34a;font-weight:600;text-decoration:none;">💬 ${info.supportPhone}</a></p>` : ""}
             </div>
 
             <p style="font-size:13px;color:#6b7280;text-align:center;line-height:1.6;margin:0;">

@@ -103,7 +103,6 @@ async function sendDigitalConfirmationEmail(
               <p style="font-size:14px;margin:4px 0;">
                 <a href="mailto:${supportEmail}" style="color:#1e40af;font-weight:600;text-decoration:none;">✉ ${supportEmail}</a>
               </p>
-              ${supportPhone ? `<p style="font-size:14px;margin:4px 0;"><a href="${whatsAppLink}" style="color:#16a34a;font-weight:600;text-decoration:none;">💬 ${supportPhone}</a></p>` : ""}
             </div>
 
             <p style="font-size:12px;color:#9ca3af;text-align:center;line-height:1.6;margin:0;">
@@ -222,7 +221,6 @@ async function sendPhysicalConfirmationEmail(
               <p style="font-size:14px;margin:6px 0;">
                 <a href="mailto:${supportEmail}" style="color:#1e40af;font-weight:600;text-decoration:none;">✉ ${supportEmail}</a>
               </p>
-              ${supportPhone ? `<p style="font-size:14px;margin:6px 0;"><a href="${whatsAppLink}" style="color:#16a34a;font-weight:600;text-decoration:none;">💬 ${supportPhone}</a></p>` : ""}
             </div>
 
             <!-- Anti-chargeback -->
