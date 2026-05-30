@@ -388,6 +388,7 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
                 slug={product.slug}
                 upsellUrl={product.upsell_url}
                 disabled={!formValid || paymentStatus === "processing"}
+                autoLoad={product.type === "physical"}
                 buyerName={buyerInfo.name}
                 buyerEmail={buyerInfo.email}
                 buyerPhone={buyerInfo.phone}

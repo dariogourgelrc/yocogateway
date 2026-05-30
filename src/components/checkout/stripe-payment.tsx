@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   EmbeddedCheckoutProvider,
@@ -18,6 +18,7 @@ interface StripePaymentProps {
   slug: string;
   upsellUrl: string | null;
   disabled: boolean;
+  autoLoad?: boolean;
   buyerName: string;
   buyerEmail: string;
   buyerPhone: string;
@@ -36,6 +37,7 @@ export function StripePayment({
   total,
   currency,
   disabled,
+  autoLoad,
   buyerName,
   buyerEmail,
   buyerPhone,
@@ -102,6 +104,14 @@ export function StripePayment({
     onPaymentFailure,
   ]);
 
+  // Auto-trigger for physical products as soon as the form becomes valid
+  useEffect(() => {
+    if (autoLoad && !disabled && !clientSecret && !loading) {
+      handlePay();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoLoad, disabled]);
+
   // Show embedded checkout once we have the client secret
   if (clientSecret && stripePromise) {
     return (
@@ -112,6 +122,35 @@ export function StripePayment({
         >
           <EmbeddedCheckout />
         </EmbeddedCheckoutProvider>
+      </div>
+    );
+  }
+
+  // Physical products: show spinner while auto-loading the embed
+  if (autoLoad) {
+    return (
+      <div className="space-y-3">
+        {loading && (
+          <div className="flex items-center justify-center gap-2 py-6 text-sm text-gray-500">
+            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Loading payment...
+          </div>
+        )}
+        {error && (
+          <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+            {error}
+            <button
+              onClick={handlePay}
+              className="mt-2 block w-full rounded bg-red-100 py-1.5 text-xs font-medium text-red-800 hover:bg-red-200"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+        <p className="text-center text-xs text-gray-400">Secured by Stripe</p>
       </div>
     );
   }
