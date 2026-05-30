@@ -194,3 +194,92 @@ export async function sendPhysicalDelayEmail(info: PhysicalOrderInfo) {
 
   if (error) console.error("sendPhysicalDelayEmail failed:", error);
 }
+
+// ─── Email 4: Transport issue (sent ~72h after purchase) ──────────────────────
+
+export async function sendPhysicalTransportIssueEmail(info: PhysicalOrderInfo) {
+  const from = process.env.EMAIL_FROM;
+  if (!from) return;
+
+  const { error } = await getResend().emails.send({
+    from,
+    to: info.buyerEmail,
+    subject: `⚠️ Important update on your order ${orderRef(info.orderId)}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+      <body style="margin:0;padding:0;background-color:#f4f4f5;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+        <div style="max-width:600px;margin:0 auto;padding:20px;">
+
+          <div style="background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:12px 12px 0 0;padding:40px 30px;text-align:center;">
+            <div style="font-size:48px;margin-bottom:10px;">⚠️</div>
+            <h1 style="color:#ffffff;font-size:22px;margin:0;font-weight:700;">Important Update</h1>
+            <p style="color:#fecaca;font-size:14px;margin:8px 0 0;">A message from the ${info.storeName} team</p>
+          </div>
+
+          <div style="background:#ffffff;padding:30px;border-radius:0 0 12px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+
+            <p style="font-size:16px;color:#1f2937;margin:0 0 20px;">
+              Hi <strong>${info.buyerName}</strong>,
+            </p>
+
+            <p style="font-size:15px;color:#374151;line-height:1.7;margin:0 0 20px;">
+              We need to inform you of an unexpected situation regarding your order <strong>${orderRef(info.orderId)}</strong>.
+            </p>
+
+            <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:20px;margin-bottom:20px;">
+              <p style="font-size:15px;color:#991b1b;margin:0 0 12px;line-height:1.7;">
+                Unfortunately, <strong>there was a problem during the transportation of your order</strong>. The carrier has reported a logistical issue that has affected some deliveries in transit.
+              </p>
+              <p style="font-size:15px;color:#991b1b;margin:0;line-height:1.7;">
+                As a result, your order will be <strong>rescheduled for delivery next week</strong>. We sincerely apologise for this inconvenience.
+              </p>
+            </div>
+
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:20px;margin-bottom:20px;">
+              <h2 style="font-size:14px;color:#166534;font-weight:700;margin:0 0 12px;">What we are doing:</h2>
+              <p style="font-size:14px;color:#1f2937;margin:6px 0;line-height:1.6;">✅ We are working directly with the carrier to resolve the situation</p>
+              <p style="font-size:14px;color:#1f2937;margin:6px 0;line-height:1.6;">✅ Your order is safe and will be delivered to the address below</p>
+              <p style="font-size:14px;color:#1f2937;margin:6px 0;line-height:1.6;">✅ You will receive a new email with the updated delivery date</p>
+            </div>
+
+            <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:20px;">
+              <p style="font-size:13px;color:#6b7280;margin:0 0 4px;">📍 Delivery address:</p>
+              <p style="font-size:14px;color:#111827;margin:0;font-weight:500;">
+                ${info.shippingAddress
+                  ? `${info.shippingAddress.address_line}, ${info.shippingAddress.city}, ${info.shippingAddress.postal_code}, ${info.shippingAddress.country}`
+                  : "—"}
+              </p>
+            </div>
+
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
+
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:20px;margin-bottom:16px;">
+              <h2 style="font-size:15px;color:#1e40af;margin:0 0 8px;font-weight:700;">Questions? We're here for you.</h2>
+              <p style="font-size:14px;color:#374151;margin:0 0 12px;line-height:1.5;">
+                If you need any clarification or have concerns about your order, please contact us directly. We respond within 24 hours!
+              </p>
+              <p style="font-size:14px;margin:4px 0;">
+                <a href="mailto:${info.supportEmail}" style="color:#1e40af;font-weight:600;text-decoration:none;">✉ ${info.supportEmail}</a>
+              </p>
+            </div>
+
+            <p style="font-size:13px;color:#6b7280;text-align:center;line-height:1.6;margin:0;">
+              We sincerely thank you for your patience and understanding.<br/>
+              <strong>${info.storeName} Team</strong>
+            </p>
+
+          </div>
+
+          <div style="text-align:center;padding:20px 0;">
+            <p style="font-size:12px;color:#9ca3af;margin:0;">Order ${orderRef(info.orderId)} — ${info.storeName}</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+  });
+
+  if (error) console.error("sendPhysicalTransportIssueEmail failed:", error);
+}

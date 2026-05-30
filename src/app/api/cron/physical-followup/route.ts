@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { getSentRemarketingEmails, recordRemarketingEmail } from "@/lib/db/orders";
-import { sendPhysicalShippingEmail, sendPhysicalDelayEmail } from "@/lib/notifications/physical-followup-emails";
+import { sendPhysicalShippingEmail, sendPhysicalDelayEmail, sendPhysicalTransportIssueEmail } from "@/lib/notifications/physical-followup-emails";
 import type { Order } from "@/lib/supabase/types";
 
 // Reuse the remarketing_emails table with high email_numbers to avoid conflicts:
 // 21 = physical shipping update email (~3h after purchase)
 // 22 = physical delay notice email (~48h after purchase)
+// 23 = physical transport issue email (~72h after purchase)
 const EMAIL_SHIPPING = 21;
 const EMAIL_DELAY = 22;
+const EMAIL_TRANSPORT = 23;
 
 const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
 const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
+const SEVENTY_TWO_HOURS_MS = 72 * 60 * 60 * 1000;
 const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
 
 interface PhysicalOrderRow extends Order {
@@ -118,6 +121,15 @@ export async function GET(request: NextRequest) {
         console.error(`physical-followup: delay email failed for ${order.id}:`, err)
       );
       await recordRemarketingEmail(order.id, EMAIL_DELAY);
+      sent++;
+    }
+
+    // Email 4 — transport issue (~72h after purchase)
+    if (ageMs >= SEVENTY_TWO_HOURS_MS && !sentSet.has(`${order.id}:${EMAIL_TRANSPORT}`)) {
+      await sendPhysicalTransportIssueEmail(info).catch((err) =>
+        console.error(`physical-followup: transport issue email failed for ${order.id}:`, err)
+      );
+      await recordRemarketingEmail(order.id, EMAIL_TRANSPORT);
       sent++;
     }
   }
