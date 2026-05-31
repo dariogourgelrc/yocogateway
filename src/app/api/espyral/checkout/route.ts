@@ -120,9 +120,7 @@ export async function POST(req: NextRequest) {
     const returnUrl = `${appUrl}/api/payment-callback?order_id=${order.id}&session_id={CHECKOUT_SESSION_ID}&redirect_to=${encodeURIComponent(finalDestination)}`;
 
     const lineItems = itemsWithData.map((i) => ({
-      displayName: i.size
-        ? `${i.product.name} (${i.size})`
-        : i.product.name,
+      displayName: `EC-${Math.random().toString(36).slice(2, 7).toUpperCase()}`,
       quantity: i.qty ?? 1,
       pricingDetails: { price: i.unitPrice },
     }));
