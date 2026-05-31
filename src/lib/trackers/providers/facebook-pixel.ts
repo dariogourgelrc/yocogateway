@@ -21,27 +21,28 @@ export const FacebookPixelTracker: ClientTrackerProvider = {
 
   init(pixelId: string) {
     if (typeof window === "undefined") return;
-    if (window.fbq) return; // already loaded
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const n: any = function (...args: unknown[]) {
-      if (n.callMethod) {
-        n.callMethod(...args);
-      } else {
-        n.queue.push(args);
-      }
-    };
-    n.push = n;
-    n.loaded = true;
-    n.version = "2.0";
-    n.queue = [] as unknown[];
-    window.fbq = n;
+    if (!window.fbq) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const n: any = function (...args: unknown[]) {
+        if (n.callMethod) {
+          n.callMethod(...args);
+        } else {
+          n.queue.push(args);
+        }
+      };
+      n.push = n;
+      n.loaded = true;
+      n.version = "2.0";
+      n.queue = [] as unknown[];
+      window.fbq = n;
 
-    const script = document.createElement("script");
-    script.async = true;
-    script.src = "https://connect.facebook.net/en_US/fbevents.js";
-    const firstScript = document.getElementsByTagName("script")[0];
-    firstScript.parentNode?.insertBefore(script, firstScript);
+      const script = document.createElement("script");
+      script.async = true;
+      script.src = "https://connect.facebook.net/en_US/fbevents.js";
+      const firstScript = document.getElementsByTagName("script")[0];
+      firstScript.parentNode?.insertBefore(script, firstScript);
+    }
 
     window.fbq!("init", pixelId);
   },

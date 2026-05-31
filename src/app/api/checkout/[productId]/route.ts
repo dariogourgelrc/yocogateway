@@ -174,9 +174,14 @@ export async function POST(
       })),
     ];
 
+    // Allow callers (e.g. Espyral store) to override the success path prefix
+    const successPathPrefix =
+      (body as { success_path_prefix?: string }).success_path_prefix ||
+      `/checkout/${product.slug}/success`;
+
     const finalDestination =
       product.upsell_url ||
-      `${appUrl}/checkout/${product.slug}/success?order_id=${order.id}`;
+      `${appUrl}${successPathPrefix}?order_id=${order.id}`;
 
     const returnUrl = `${appUrl}/api/payment-callback?order_id=${order.id}&session_id={CHECKOUT_SESSION_ID}&redirect_to=${encodeURIComponent(finalDestination)}`;
 

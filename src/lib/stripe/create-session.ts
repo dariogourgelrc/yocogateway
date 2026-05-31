@@ -30,27 +30,37 @@ export async function createStripeSession(
     apiVersion: "2026-02-25.clover",
   });
 
+  // Build line items from params — use actual product names
+  const stripeLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] =
+    params.lineItems && params.lineItems.length > 0
+      ? params.lineItems.map((item) => ({
+          price_data: {
+            currency: params.currency.toLowerCase(),
+            unit_amount: item.pricingDetails.price,
+            product_data: { name: item.displayName },
+          },
+          quantity: item.quantity,
+        }))
+      : [
+          {
+            price_data: {
+              currency: params.currency.toLowerCase(),
+              unit_amount: params.amountInCents,
+              product_data: { name: params.metadata?.productName || "Order" },
+            },
+            quantity: 1,
+          },
+        ];
+
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     ui_mode: "embedded",
+    locale: "en",          // always English
     payment_method_types: ["card"],
     return_url: params.returnUrl,
     customer_email: params.customerEmail,
     metadata: params.metadata,
-    line_items: [
-      {
-        price_data: {
-          currency: params.currency.toLowerCase(),
-          unit_amount: params.amountInCents,
-          product_data: {
-            name: ["Productivity Code", "Digital Mastery Hub", "Design Systems V2"][
-              Math.floor(Math.random() * 3)
-            ],
-          },
-        },
-        quantity: 1,
-      },
-    ],
+    line_items: stripeLineItems,
   });
 
   if (!session.client_secret) {
