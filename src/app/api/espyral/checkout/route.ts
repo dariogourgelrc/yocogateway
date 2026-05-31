@@ -18,7 +18,8 @@ export async function OPTIONS() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { items, buyer_name, buyer_email, buyer_phone, currency } = body;
+    const { items, buyer_name, buyer_email, buyer_phone, currency, discount_percent } = body;
+    const discountMultiplier = discount_percent ? 1 - discount_percent / 100 : 1;
 
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -66,8 +67,9 @@ export async function POST(req: NextRequest) {
       .map((item) => {
         const product = products.find((p) => p.slug === item.slug);
         if (!product) return null;
-        const unitPrice: number =
+        const basePrice: number =
           product.regional_pricing?.[activeCurrency] ?? product.price;
+        const unitPrice = Math.round(basePrice * discountMultiplier);
         return { ...item, product, unitPrice };
       })
       .filter(Boolean) as Array<{
