@@ -34,6 +34,9 @@ export async function upsertUserSettings(
     stripe_secret_key: updates.stripe_secret_key ?? "",
     stripe_publishable_key: updates.stripe_publishable_key ?? "",
     stripe_webhook_secret: updates.stripe_webhook_secret ?? "",
+    whop_api_key: updates.whop_api_key ?? "",
+    whop_company_id: updates.whop_company_id ?? "",
+    whop_webhook_secret: updates.whop_webhook_secret ?? "",
   };
 
   const { data, error } = await supabase

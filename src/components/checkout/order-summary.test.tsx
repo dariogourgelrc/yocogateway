@@ -27,6 +27,10 @@ const mockProduct: Product = {
   stripe_publishable_key: null,
   stripe_webhook_secret: null,
   exit_intent_offer_id: null,
+  payment_provider: "stripe",
+  whop_api_key: null,
+  whop_company_id: null,
+  whop_webhook_secret: null,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };

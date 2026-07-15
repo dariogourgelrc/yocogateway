@@ -7,19 +7,24 @@ import { Button } from "@/components/ui/button";
 
 interface SettingsFormProps {
   webhookUrl: string;
+  whopWebhookUrl: string;
   isSuperAdmin: boolean;
 }
 
-export function SettingsForm({ webhookUrl }: SettingsFormProps) {
+export function SettingsForm({ webhookUrl, whopWebhookUrl }: SettingsFormProps) {
   const [secretKey, setSecretKey] = useState("");
   const [publishableKey, setPublishableKey] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");
+  const [whopApiKey, setWhopApiKey] = useState("");
+  const [whopCompanyId, setWhopCompanyId] = useState("");
+  const [whopWebhookSecret, setWhopWebhookSecret] = useState("");
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [whopCopied, setWhopCopied] = useState(false);
 
   // Load existing (masked) values
   useEffect(() => {
@@ -30,6 +35,9 @@ export function SettingsForm({ webhookUrl }: SettingsFormProps) {
           setSecretKey(data.stripe_secret_key || "");
           setPublishableKey(data.stripe_publishable_key || "");
           setWebhookSecret(data.stripe_webhook_secret || "");
+          setWhopApiKey(data.whop_api_key || "");
+          setWhopCompanyId(data.whop_company_id || "");
+          setWhopWebhookSecret(data.whop_webhook_secret || "");
         }
       })
       .catch(() => {});
@@ -47,6 +55,9 @@ export function SettingsForm({ webhookUrl }: SettingsFormProps) {
           stripe_secret_key: secretKey,
           stripe_publishable_key: publishableKey,
           stripe_webhook_secret: webhookSecret,
+          whop_api_key: whopApiKey,
+          whop_company_id: whopCompanyId,
+          whop_webhook_secret: whopWebhookSecret,
         }),
       });
 
@@ -58,6 +69,8 @@ export function SettingsForm({ webhookUrl }: SettingsFormProps) {
       const saved = await res.json();
       setSecretKey(saved.stripe_secret_key || "");
       setWebhookSecret(saved.stripe_webhook_secret || "");
+      setWhopApiKey(saved.whop_api_key || "");
+      setWhopWebhookSecret(saved.whop_webhook_secret || "");
       setFeedback({ type: "success", message: "Configurações salvas!" });
     } catch (err) {
       setFeedback({
@@ -73,6 +86,12 @@ export function SettingsForm({ webhookUrl }: SettingsFormProps) {
     await navigator.clipboard.writeText(webhookUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyWhopWebhook = async () => {
+    await navigator.clipboard.writeText(whopWebhookUrl);
+    setWhopCopied(true);
+    setTimeout(() => setWhopCopied(false), 2000);
   };
 
   return (
@@ -123,6 +142,56 @@ export function SettingsForm({ webhookUrl }: SettingsFormProps) {
             className="shrink-0 text-xs rounded-lg border border-gray-200 px-3 py-2 hover:bg-gray-50 transition-colors"
           >
             {copied ? "Copiado!" : "Copiar"}
+          </button>
+        </div>
+      </Card>
+
+      <Card>
+        <h2 className="text-base font-semibold mb-4">Chaves Whop</h2>
+        <div className="space-y-4">
+          <Input
+            label="API Key"
+            type="password"
+            value={whopApiKey}
+            onChange={(e) => setWhopApiKey(e.target.value)}
+            placeholder="apik_..."
+          />
+          <Input
+            label="Company ID"
+            value={whopCompanyId}
+            onChange={(e) => setWhopCompanyId(e.target.value)}
+            placeholder="biz_..."
+          />
+          <Input
+            label="Webhook Secret"
+            type="password"
+            value={whopWebhookSecret}
+            onChange={(e) => setWhopWebhookSecret(e.target.value)}
+            placeholder="whsec_..."
+          />
+        </div>
+      </Card>
+
+      <Card>
+        <h2 className="text-base font-semibold mb-1">URL do Webhook (Whop)</h2>
+        <p className="text-sm text-gray-500 mb-3">
+          Configure esta URL no dashboard da Whop em{" "}
+          <span className="font-medium">Developer → Webhooks → Create Webhook</span>.
+          Ative pelo menos o evento{" "}
+          <span className="font-mono text-xs bg-gray-100 px-1 py-0.5 rounded">
+            payment.succeeded
+          </span>
+          .
+        </p>
+        <div className="flex items-center gap-2">
+          <code className="flex-1 text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 break-all text-gray-700">
+            {whopWebhookUrl}
+          </code>
+          <button
+            onClick={handleCopyWhopWebhook}
+            className="shrink-0 text-xs rounded-lg border border-gray-200 px-3 py-2 hover:bg-gray-50 transition-colors"
+          >
+            {whopCopied ? "Copiado!" : "Copiar"}
           </button>
         </div>
       </Card>

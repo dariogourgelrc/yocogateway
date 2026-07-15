@@ -81,6 +81,17 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
   const [stripeWebhookSecret, setStripeWebhookSecret] = useState(initialData?.stripe_webhook_secret || "");
   const [copiedWebhook, setCopiedWebhook] = useState(false);
 
+  const [paymentProvider, setPaymentProvider] = useState<"stripe" | "whop">(
+    initialData?.payment_provider || "stripe"
+  );
+  const [customWhopEnabled, setCustomWhopEnabled] = useState(
+    !!(initialData?.whop_api_key || initialData?.whop_company_id)
+  );
+  const [whopApiKey, setWhopApiKey] = useState(initialData?.whop_api_key || "");
+  const [whopCompanyId, setWhopCompanyId] = useState(initialData?.whop_company_id || "");
+  const [whopWebhookSecret, setWhopWebhookSecret] = useState(initialData?.whop_webhook_secret || "");
+  const [copiedWhopWebhook, setCopiedWhopWebhook] = useState(false);
+
   const [orderBumps, setOrderBumps] = useState<OrderBumpData[]>(
     initialData?.order_bumps?.map((b) => ({
       id: b.id,
@@ -166,6 +177,10 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
       stripe_secret_key: customStripeEnabled ? stripeSecretKey || null : null,
       stripe_publishable_key: customStripeEnabled ? stripePublishableKey || null : null,
       stripe_webhook_secret: customStripeEnabled ? stripeWebhookSecret || null : null,
+      payment_provider: paymentProvider,
+      whop_api_key: customWhopEnabled ? whopApiKey || null : null,
+      whop_company_id: customWhopEnabled ? whopCompanyId || null : null,
+      whop_webhook_secret: customWhopEnabled ? whopWebhookSecret || null : null,
       order_bumps: orderBumps.map((b) => ({
         ...b,
         price: Math.round(parseFloat(b.price as unknown as string || "0") * 100),
@@ -241,6 +256,40 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
           </button>
         </div>
       </Card>
+
+      {/* Payment provider — decides which integration the checkout link uses */}
+      {mode === "edit" && (
+        <Card>
+          <h2 className="mb-1 text-lg font-semibold">Provedor de Pagamento</h2>
+          <p className="text-sm text-gray-500 mb-3">
+            A integração ativa é a que o link de checkout deste produto vai usar.
+          </p>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setPaymentProvider("stripe")}
+              className={`flex-1 rounded-lg border-2 py-3 text-sm font-medium transition-colors ${
+                paymentProvider === "stripe"
+                  ? "border-black bg-black text-white"
+                  : "border-gray-200 text-gray-600 hover:border-gray-400"
+              }`}
+            >
+              Stripe
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaymentProvider("whop")}
+              className={`flex-1 rounded-lg border-2 py-3 text-sm font-medium transition-colors ${
+                paymentProvider === "whop"
+                  ? "border-black bg-black text-white"
+                  : "border-gray-200 text-gray-600 hover:border-gray-400"
+              }`}
+            >
+              Whop
+            </button>
+          </div>
+        </Card>
+      )}
 
       {/* Product info */}
       <Card>
@@ -455,6 +504,79 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
                     className="shrink-0 text-xs rounded-lg border border-gray-200 px-3 py-2 hover:bg-gray-50 transition-colors"
                   >
                     {copiedWebhook ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Custom Whop Account — edit mode only (needs product ID for webhook URL) */}
+      {mode === "edit" && initialData && (
+        <Card>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-lg font-semibold">Custom Whop Account</h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Override the account-level Whop keys for this product only.
+              </p>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={customWhopEnabled}
+                onChange={(e) => setCustomWhopEnabled(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-black focus:ring-black"
+              />
+              <span className="text-sm font-medium text-gray-700">Enable</span>
+            </label>
+          </div>
+
+          {customWhopEnabled && (
+            <div className="space-y-4 border-t border-gray-100 pt-4">
+              <Input
+                label="API Key"
+                type="password"
+                value={whopApiKey}
+                onChange={(e) => setWhopApiKey(e.target.value)}
+                placeholder="apik_..."
+              />
+              <Input
+                label="Company ID"
+                value={whopCompanyId}
+                onChange={(e) => setWhopCompanyId(e.target.value)}
+                placeholder="biz_..."
+              />
+              <Input
+                label="Webhook Secret"
+                type="password"
+                value={whopWebhookSecret}
+                onChange={(e) => setWhopWebhookSecret(e.target.value)}
+                placeholder="whsec_..."
+              />
+              <div>
+                <p className="text-xs font-medium text-gray-600 mb-1">Webhook URL</p>
+                <p className="text-xs text-gray-500 mb-2">
+                  Add this endpoint in your Whop dashboard under{" "}
+                  <span className="font-medium">Developer → Webhooks → Create Webhook</span>.
+                  Enable at least the <span className="font-mono bg-gray-100 px-1 rounded">payment.succeeded</span> event.
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 break-all text-gray-700">
+                    {(process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : ""))}/api/webhooks/whop/product/{initialData.id}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const url = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/api/webhooks/whop/product/${initialData.id}`;
+                      await navigator.clipboard.writeText(url);
+                      setCopiedWhopWebhook(true);
+                      setTimeout(() => setCopiedWhopWebhook(false), 2000);
+                    }}
+                    className="shrink-0 text-xs rounded-lg border border-gray-200 px-3 py-2 hover:bg-gray-50 transition-colors"
+                  >
+                    {copiedWhopWebhook ? "Copied!" : "Copy"}
                   </button>
                 </div>
               </div>

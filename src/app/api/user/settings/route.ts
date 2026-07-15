@@ -20,6 +20,10 @@ export async function GET(request: NextRequest) {
         stripe_webhook_secret: settings.stripe_webhook_secret
           ? maskKey(settings.stripe_webhook_secret)
           : "",
+        whop_api_key: settings.whop_api_key ? maskKey(settings.whop_api_key) : "",
+        whop_webhook_secret: settings.whop_webhook_secret
+          ? maskKey(settings.whop_webhook_secret)
+          : "",
       });
     }
 
@@ -50,6 +54,15 @@ export async function PUT(request: NextRequest) {
     if (body.stripe_webhook_secret && !body.stripe_webhook_secret.includes("•")) {
       updates.stripe_webhook_secret = body.stripe_webhook_secret;
     }
+    if (body.whop_api_key && !body.whop_api_key.includes("•")) {
+      updates.whop_api_key = body.whop_api_key;
+    }
+    if (body.whop_company_id) {
+      updates.whop_company_id = body.whop_company_id;
+    }
+    if (body.whop_webhook_secret && !body.whop_webhook_secret.includes("•")) {
+      updates.whop_webhook_secret = body.whop_webhook_secret;
+    }
 
     // Merge with existing settings so masked fields aren't overwritten
     const existing = await getUserSettings(user.id);
@@ -59,6 +72,10 @@ export async function PUT(request: NextRequest) {
         updates.stripe_publishable_key ?? existing?.stripe_publishable_key ?? "",
       stripe_webhook_secret:
         updates.stripe_webhook_secret ?? existing?.stripe_webhook_secret ?? "",
+      whop_api_key: updates.whop_api_key ?? existing?.whop_api_key ?? "",
+      whop_company_id: updates.whop_company_id ?? existing?.whop_company_id ?? "",
+      whop_webhook_secret:
+        updates.whop_webhook_secret ?? existing?.whop_webhook_secret ?? "",
     };
 
     const saved = await upsertUserSettings(user.id, merged);
@@ -68,6 +85,10 @@ export async function PUT(request: NextRequest) {
       stripe_secret_key: saved.stripe_secret_key ? maskKey(saved.stripe_secret_key) : "",
       stripe_webhook_secret: saved.stripe_webhook_secret
         ? maskKey(saved.stripe_webhook_secret)
+        : "",
+      whop_api_key: saved.whop_api_key ? maskKey(saved.whop_api_key) : "",
+      whop_webhook_secret: saved.whop_webhook_secret
+        ? maskKey(saved.whop_webhook_secret)
         : "",
     });
   } catch (err) {

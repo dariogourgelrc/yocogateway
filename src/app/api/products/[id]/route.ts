@@ -45,6 +45,10 @@ interface UpdateProductBody {
   stripe_publishable_key?: string | null;
   stripe_webhook_secret?: string | null;
   exit_intent_offer_id?: string | null;
+  payment_provider?: "stripe" | "whop";
+  whop_api_key?: string | null;
+  whop_company_id?: string | null;
+  whop_webhook_secret?: string | null;
   order_bumps?: (Omit<OrderBumpInsert, "product_id"> & { id?: string })[];
   trackers?: (Omit<ProductTrackerInsert, "product_id"> & { id?: string })[];
 }
@@ -101,6 +105,14 @@ export async function PUT(
       productUpdates.stripe_webhook_secret = body.stripe_webhook_secret;
     if (body.exit_intent_offer_id !== undefined)
       productUpdates.exit_intent_offer_id = body.exit_intent_offer_id;
+    if (body.payment_provider !== undefined)
+      productUpdates.payment_provider = body.payment_provider;
+    if (body.whop_api_key !== undefined)
+      productUpdates.whop_api_key = body.whop_api_key;
+    if (body.whop_company_id !== undefined)
+      productUpdates.whop_company_id = body.whop_company_id;
+    if (body.whop_webhook_secret !== undefined)
+      productUpdates.whop_webhook_secret = body.whop_webhook_secret;
 
     const product = await updateProduct(id, productUpdates);
 

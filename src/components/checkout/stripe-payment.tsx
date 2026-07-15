@@ -6,6 +6,7 @@ import {
   EmbeddedCheckoutProvider,
   EmbeddedCheckout,
 } from "@stripe/react-stripe-js";
+import { WhopCheckoutEmbed } from "@whop/checkout/react";
 import { Button } from "@/components/ui/button";
 import type { ShippingInfo } from "./shipping-form";
 
@@ -46,12 +47,31 @@ export function StripePayment({
   trackingParams,
   eventId,
   onPaymentStart,
+  onPaymentSuccess,
   onPaymentFailure,
 }: StripePaymentProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [stripePromise, setStripePromise] = useState<ReturnType<typeof loadStripe> | null>(null);
+  const [whopSession, setWhopSession] = useState<{ sessionId: string; orderId: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleWhopComplete = useCallback(
+    async (orderId: string) => {
+      // The webhook is the durable confirmation; this just mirrors what Stripe's
+      // return_url would trigger server-side (mark paid, send email/WhatsApp, UTMify)
+      // without navigating away, since the embed already completed in-page.
+      try {
+        await fetch(
+          `/api/payment-callback?order_id=${orderId}&redirect_to=${encodeURIComponent(window.location.href)}`
+        );
+      } catch {
+        // ignore — webhook still confirms the order
+      }
+      onPaymentSuccess(orderId);
+    },
+    [onPaymentSuccess]
+  );
 
   const handlePay = useCallback(async () => {
     setLoading(true);
@@ -80,9 +100,15 @@ export function StripePayment({
         throw new Error(data.error || "Failed to create checkout");
       }
 
-      const { client_secret, stripe_publishable_key } = await res.json();
-      setStripePromise(loadStripe(stripe_publishable_key));
-      setClientSecret(client_secret);
+      const data = await res.json();
+
+      if (data.provider === "whop" && data.whop_session_id) {
+        setWhopSession({ sessionId: data.whop_session_id, orderId: data.order_id });
+        return;
+      }
+
+      setStripePromise(loadStripe(data.stripe_publishable_key));
+      setClientSecret(data.client_secret);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Payment failed";
       setError(message);
@@ -106,7 +132,7 @@ export function StripePayment({
 
   // Auto-trigger for physical products as soon as the form becomes valid
   useEffect(() => {
-    if (autoLoad && !disabled && !clientSecret && !loading) {
+    if (autoLoad && !disabled && !clientSecret && !whopSession && !loading) {
       handlePay();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -122,6 +148,24 @@ export function StripePayment({
         >
           <EmbeddedCheckout />
         </EmbeddedCheckoutProvider>
+      </div>
+    );
+  }
+
+  // Whop's embedded checkout — same idea as Stripe's, just a different SDK
+  if (whopSession) {
+    return (
+      <div className="space-y-3">
+        <WhopCheckoutEmbed
+          sessionId={whopSession.sessionId}
+          onComplete={() => handleWhopComplete(whopSession.orderId)}
+          onPaymentError={(err) => {
+            const message = err?.message || "Payment failed";
+            setError(message);
+            onPaymentFailure(message);
+          }}
+        />
+        <p className="text-center text-xs text-gray-400">Secured by Whop</p>
       </div>
     );
   }

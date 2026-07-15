@@ -357,9 +357,10 @@ Create a file called `.env.local` in the project root. Copy from `.env.example` 
 | `EMAIL_FROM` | Yes | Your verified domain, or `onboarding@resend.dev` for testing | `noreply@yourdomain.com` |
 | `WHATSAPP_ACCESS_TOKEN` | No | Meta for Developers > WhatsApp > API Setup | `EAAGabc123...` |
 | `WHATSAPP_PHONE_NUMBER_ID` | No | Meta for Developers > WhatsApp > Phone Numbers | `109876543210` |
-| `NEXT_PUBLIC_APP_URL` | Yes | Your deployment URL (or ngrok URL for local dev) | `https://yourdomain.com` |
+| `NEXT_PUBLIC_APP_URL` | Yes | Your deployment URL (or ngrok/cloudflared URL for local dev) | `https://yourdomain.com` |
+| `WHOP_API_KEY` / `WHOP_COMPANY_ID` / `WHOP_WEBHOOK_SECRET` | No | Only used by the isolated `/whop-test` tooling (Section 13.7) | `apik_...` / `biz_...` / `whsec_...` |
 
-**Note**: Facebook Pixel IDs, CAPI tokens, and UTMify API tokens are NOT environment variables. They are configured per product in the `product_trackers` table via the admin panel.
+**Note**: Facebook Pixel IDs, CAPI tokens, UTMify API tokens, Stripe keys, and the **real** Whop keys are NOT environment variables. They are configured per product/user in the database via the admin panel (product edit page and Admin → Configurações).
 
 ---
 
@@ -546,3 +547,62 @@ Make sure you replace the test keys with live keys in Vercel's environment varia
 **Fix**:
 1. Check the product has a tracker with type `utmify`, side `server`, and a valid API token as `tracker_id`
 2. Check server logs for "UTMify error" messages
+
+---
+
+## 13. Whop Integration
+
+Whop is a second, fully wired payment provider alongside Stripe. Each product has a **Provedor de Pagamento** toggle (Stripe or Whop) in its admin edit page — whichever is active is the integration the product's checkout link actually uses. Credentials resolve the same way as Stripe's: a per-product override (Custom Whop Account card) takes priority over the account-level keys in **Admin → Configurações**.
+
+The checkout itself renders as an **embedded** form (`@whop/checkout/react`'s `WhopCheckoutEmbed`), same UX as Stripe's embedded checkout — no redirect to a Whop-hosted page, and (for plain card payments) no public HTTPS URL needed locally at all.
+
+### 13.1. Run the schema migration first
+
+This integration needs 4 new columns on `products` and 3 on `user_settings`. Run `supabase/migrations/003_add_whop_payment_provider.sql` in the Supabase SQL Editor (same steps as Section 2.2) before anything else — the checkout/admin routes will error on missing columns until this is applied.
+
+### 13.2. Create a Whop account and get your API key
+
+1. Go to [whop.com](https://whop.com) and create an account / business
+2. In the dashboard, find **Account API Keys** (Developer settings)
+3. Click **Create**, name it, and grant at least: `checkout_configuration:create`, `checkout_configuration:basic:read`, `plan:create`, `access_pass:create`, `access_pass:update` (the **Admin** role covers all of these plus more, if you'd rather not pick individually)
+4. Copy the key
+
+### 13.3. Get your Company ID
+
+Visible in the dashboard URL whenever you're on a company page: `whop.com/dashboard/biz_XXXXXXX/...`. Copy the `biz_...` part.
+
+### 13.4. Configure keys
+
+- **Account-level default** (used by any product left on Whop without its own override): **Admin → Configurações → Chaves Whop** — paste API Key + Company ID there. Leave Webhook Secret for step 13.6.
+- **Per-product override**: on a product's edit page, set **Provedor de Pagamento** to Whop, then enable **Custom Whop Account** and fill in its own API Key / Company ID / Webhook Secret if this product should use a different Whop business than the account default.
+
+### 13.5. Register the webhook (needs a tunnel — for the webhook only)
+
+The embed itself doesn't need a tunnel (see above), but Whop still needs a public URL to deliver the webhook to, same as Yoco's setup in Section 4.1:
+
+1. Start the dev server: `npm run dev`
+2. In another terminal: `npx cloudflared tunnel --url http://localhost:3000` (no account needed — if the quick tunnel comes back flaky/`530`, just kill it and start a fresh one, or try `npx ngrok http 3000` instead)
+3. Copy the HTTPS URL it prints (e.g. `https://random-words.trycloudflare.com`)
+4. In the Whop dashboard: **Developer → Webhooks → Create Webhook**
+   - Account-level: URL = `https://<tunnel>/api/webhooks/whop/<your-user-id>` (shown on the Configurações page)
+   - Per-product override: URL = `https://<tunnel>/api/webhooks/whop/product/<productId>` (shown on the product's edit page, under Custom Whop Account)
+   - Select at least `payment.succeeded`
+5. Save — copy the **webhook secret** Whop gives you into the matching Webhook Secret field (account settings or per-product) and re-save
+
+Note: `NEXT_PUBLIC_APP_URL` does **not** need to point at the tunnel for the embed to work — leave it as your normal local URL. It only needs to be a real https domain if you want the embed's `returnUrl` fallback (for 3DS/redirect-based payment methods) to work locally too; otherwise plain card payments complete entirely in the embed via the `onComplete` callback.
+
+### 13.6. Test the real flow
+
+1. Open the checkout link for a product with Whop active (`/checkout/<slug>`)
+2. Fill in buyer details — the embedded Whop checkout form loads inline (no redirect)
+3. Complete the payment (Whop has no clearly documented sandbox/test-card mode as of writing — check the dashboard for a test-mode toggle, or use a low-value real charge)
+4. On completion, the page calls `/api/payment-callback` in the background (marks the order paid, same side effects as Stripe's redirect) and proceeds to the success/upsell page — no navigation away from your site
+5. The webhook is the durable confirmation — check your terminal for `received: true` — and re-confirms `orderPaid` for server-side trackers (UTMify etc.)
+
+### 13.7. Isolated test tooling (unchanged, still useful)
+
+The standalone tooling from before still works independently of any product, useful for debugging the Whop API/webhook mechanics in isolation without needing a real product: `/whop-test` page, `POST /api/whop/test-checkout`, and the generic `POST /api/webhooks/whop` (all driven by the global `WHOP_API_KEY` / `WHOP_COMPANY_ID` / `WHOP_WEBHOOK_SECRET` env vars, not the DB-backed per-product/per-user keys).
+
+### 13.8. Webhook signature verification
+
+`src/lib/whop/verify-webhook.ts` implements the Standard Webhooks HMAC-SHA256 check directly (Node `crypto`, no SDK dependency) against whichever secret is passed in — the per-user or per-product secret for the real routes, or `WHOP_WEBHOOK_SECRET` for the isolated test route. A 401 means the signature didn't match — double check the secret was copied exactly (including the `whsec_` prefix) and that the tunnel URL registered in Whop matches the one currently running.

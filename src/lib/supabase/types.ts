@@ -34,6 +34,10 @@ export interface Product {
   stripe_publishable_key: string | null;
   stripe_webhook_secret: string | null;
   exit_intent_offer_id: string | null;
+  payment_provider: "stripe" | "whop";
+  whop_api_key: string | null;
+  whop_company_id: string | null;
+  whop_webhook_secret: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -44,6 +48,9 @@ export interface UserSettings {
   stripe_secret_key: string;
   stripe_publishable_key: string;
   stripe_webhook_secret: string;
+  whop_api_key: string;
+  whop_company_id: string;
+  whop_webhook_secret: string;
   created_at: string;
   updated_at: string;
 }

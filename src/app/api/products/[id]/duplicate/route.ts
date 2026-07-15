@@ -49,11 +49,15 @@ export async function POST(
       remarketing_offer_1: null,
       remarketing_offer_2: null,
       remarketing_offer_3: null,
-      // Stripe keys intentionally not copied
+      // Stripe/Whop keys intentionally not copied
       stripe_secret_key: null,
       stripe_publishable_key: null,
       stripe_webhook_secret: null,
       exit_intent_offer_id: null,
+      payment_provider: source.payment_provider,
+      whop_api_key: null,
+      whop_company_id: null,
+      whop_webhook_secret: null,
     });
 
     await Promise.all(

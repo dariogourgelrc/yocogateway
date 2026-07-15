@@ -7,6 +7,7 @@ import { createOrder } from "@/lib/db/orders";
 import { createOrderItems } from "@/lib/db/order-items";
 import { getUserSettings } from "@/lib/db/user-settings";
 import { createStripeSession } from "@/lib/stripe/create-session";
+import { createWhopSession, resolveWhopCurrency } from "@/lib/whop/create-session";
 import { fireServerTrackers } from "@/lib/trackers/server-registry";
 import { createServerClient } from "@/lib/supabase/server";
 import type {
@@ -48,11 +49,37 @@ export async function POST(
     const allBumps = await getOrderBumps(productId);
     const trackers = await getProductTrackers(productId);
 
-    // Resolve Stripe keys: product-level override takes priority over user settings
-    let stripeSecretKey: string;
-    let stripePublishableKey: string;
+    // Resolve payment credentials for the product's active provider:
+    // product-level override takes priority over the owner's account-level settings.
+    const provider = product.payment_provider || "stripe";
 
-    if (product.stripe_secret_key && product.stripe_publishable_key) {
+    let stripeSecretKey = "";
+    let stripePublishableKey = "";
+    let whopApiKey = "";
+    let whopCompanyId = "";
+
+    if (provider === "whop") {
+      if (product.whop_api_key && product.whop_company_id) {
+        whopApiKey = product.whop_api_key;
+        whopCompanyId = product.whop_company_id;
+      } else {
+        if (!product.user_id) {
+          return NextResponse.json(
+            { error: "Product has no owner configured" },
+            { status: 500 }
+          );
+        }
+        const userSettings = await getUserSettings(product.user_id);
+        if (!userSettings?.whop_api_key || !userSettings?.whop_company_id) {
+          return NextResponse.json(
+            { error: "Payment not configured for this product" },
+            { status: 500 }
+          );
+        }
+        whopApiKey = userSettings.whop_api_key;
+        whopCompanyId = userSettings.whop_company_id;
+      }
+    } else if (product.stripe_secret_key && product.stripe_publishable_key) {
       stripeSecretKey = product.stripe_secret_key;
       stripePublishableKey = product.stripe_publishable_key;
     } else {
@@ -183,30 +210,66 @@ export async function POST(
       product.upsell_url ||
       `${appUrl}${successPathPrefix}?order_id=${order.id}`;
 
-    const returnUrl = `${appUrl}/api/payment-callback?order_id=${order.id}&session_id={CHECKOUT_SESSION_ID}&redirect_to=${encodeURIComponent(finalDestination)}`;
+    let paymentSessionId: string;
+    let responseExtra: Record<string, unknown>;
 
-    // Create Stripe session
-    const stripeSession = await createStripeSession({
-      stripeSecretKey: stripeSecretKey,
-      amountInCents: total,
-      currency: activeCurrency,
-      returnUrl,
-      customerEmail: buyerEmail,
-      lineItems,
-      metadata: { orderId: order.id },
-    });
+    if (provider === "whop") {
+      // Only pass a redirect_url when it's a real public https domain — Whop rejects
+      // anything else outright (even https://localhost), and the embed only needs
+      // it as a fallback for redirect-based payment methods (3DS, bank redirects).
+      const whopRedirectUrl = appUrl.startsWith("https://")
+        ? `${appUrl}/api/payment-callback?order_id=${order.id}&redirect_to=${encodeURIComponent(finalDestination)}`
+        : undefined;
+
+      const whopSession = await createWhopSession({
+        apiKey: whopApiKey,
+        companyId: whopCompanyId,
+        amountInCents: total,
+        currency: resolveWhopCurrency(activeCurrency),
+        redirectUrl: whopRedirectUrl,
+        productTitle: paymentDisplayName,
+        externalIdentifier: order.id,
+        metadata: { orderId: order.id },
+      });
+
+      paymentSessionId = whopSession.id;
+      responseExtra = {
+        provider: "whop",
+        whop_session_id: whopSession.id,
+        purchase_url: whopSession.purchaseUrl,
+      };
+    } else {
+      const returnUrl = `${appUrl}/api/payment-callback?order_id=${order.id}&session_id={CHECKOUT_SESSION_ID}&redirect_to=${encodeURIComponent(finalDestination)}`;
+
+      const stripeSession = await createStripeSession({
+        stripeSecretKey: stripeSecretKey,
+        amountInCents: total,
+        currency: activeCurrency,
+        returnUrl,
+        customerEmail: buyerEmail,
+        lineItems,
+        metadata: { orderId: order.id },
+      });
+
+      paymentSessionId = stripeSession.id;
+      responseExtra = {
+        provider: "stripe",
+        client_secret: stripeSession.clientSecret,
+        stripe_publishable_key: stripePublishableKey,
+      };
+    }
 
     // Update order with payment session id
     const supabase = createServerClient();
     await supabase
       .from("orders")
-      .update({ yoco_payment_id: stripeSession.id })
+      .update({ yoco_payment_id: paymentSessionId })
       .eq("id", order.id);
 
     // Fire server trackers
     const orderWithItems = {
       ...order,
-      yoco_payment_id: stripeSession.id,
+      yoco_payment_id: paymentSessionId,
       order_items: orderItems,
     };
 
@@ -216,8 +279,7 @@ export async function POST(
 
     return NextResponse.json({
       order_id: order.id,
-      client_secret: stripeSession.clientSecret,
-      stripe_publishable_key: stripePublishableKey,
+      ...responseExtra,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
