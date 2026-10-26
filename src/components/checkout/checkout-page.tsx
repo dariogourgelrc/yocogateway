@@ -13,6 +13,7 @@ import { extractUtmParams } from "@/lib/trackers/utm";
 import { generateEventId } from "@/lib/utils/event-id";
 import { getCheckoutCopy, normalizeCheckoutLanguage, type CheckoutLanguage } from "@/lib/i18n/checkout-copy";
 import { getCurrencySymbol } from "@/lib/utils/currency";
+import { parseCheckoutAmount } from "@/lib/utils/checkout-amount";
 import type {
   ProductWithBumpsAndTrackers,
   TrackingParams,
@@ -61,18 +62,21 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
     ? initialProduct.price
     : initialProduct.regional_pricing?.[activeCurrency] ?? initialProduct.price;
   const flexiblePricing = initialProduct.pay_what_you_want && !offerId;
-  const [selectedAmount, setSelectedAmount] = useState<number | "other" | null>(null);
+  const amountFromUrl = parseCheckoutAmount(searchParams?.get("amount"));
+  const [selectedAmount, setSelectedAmount] = useState<number | "other" | "url" | null>(
+    amountFromUrl !== null ? "url" : null
+  );
   const [otherAmount, setOtherAmount] = useState("");
   const [customPriceTouched, setCustomPriceTouched] = useState(false);
 
   useEffect(() => {
-    setSelectedAmount(null);
+    setSelectedAmount(amountFromUrl !== null ? "url" : null);
     setOtherAmount("");
     setCustomPriceTouched(false);
-  }, [activePrice, activeCurrency]);
+  }, [activePrice, activeCurrency, amountFromUrl]);
 
   const customPriceIsValid = selectedAmount !== null && (
-    selectedAmount !== "other" || (
+    selectedAmount === "url" ? amountFromUrl !== null : selectedAmount !== "other" || (
       /^\d+(?:\.\d{1,2})?$/.test(otherAmount) &&
       Number.isFinite(Number(otherAmount)) &&
       Math.round(Number(otherAmount) * 100) >= 200
@@ -81,7 +85,9 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
   const customPriceIsBelowMinimum = selectedAmount === "other" && otherAmount !== ""
     && Number.isFinite(Number(otherAmount))
     && Math.round(Number(otherAmount) * 100) < 200;
-  const customPriceInCents = selectedAmount === "other"
+  const customPriceInCents = selectedAmount === "url"
+    ? amountFromUrl ?? 0
+    : selectedAmount === "other"
     ? (customPriceIsValid ? Math.round(Number(otherAmount) * 100) : 0)
     : typeof selectedAmount === "number" ? selectedAmount * 100 : 0;
   const product = {
@@ -344,6 +350,11 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
 
           {flexiblePricing && (
             <div className="border-b border-gray-100 px-5 py-4">
+              {amountFromUrl !== null ? (
+                <p className="text-sm font-semibold text-gray-900">
+                  {getCurrencySymbol(activeCurrency)} {(amountFromUrl / 100).toFixed(2)}
+                </p>
+              ) : <>
               <p className="mb-3 block text-sm font-medium text-gray-900">
                 {copy.choosePrice}
               </p>
@@ -408,6 +419,7 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
               ) : customPriceTouched && selectedAmount === "other" && otherAmount !== "" && !customPriceIsValid ? (
                 <p className="mt-1 text-xs text-red-600">{copy.invalidPrice}</p>
               ) : null}
+              </>}
             </div>
           )}
 

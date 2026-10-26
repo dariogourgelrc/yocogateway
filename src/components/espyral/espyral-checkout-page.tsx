@@ -10,6 +10,7 @@ import { extractUtmParams } from '@/lib/trackers/utm';
 import { generateEventId } from '@/lib/utils/event-id';
 import { getCheckoutCopy, normalizeCheckoutLanguage, type CheckoutLanguage } from '@/lib/i18n/checkout-copy';
 import { getCurrencySymbol } from '@/lib/utils/currency';
+import { parseCheckoutAmount } from '@/lib/utils/checkout-amount';
 import type { ProductWithBumpsAndTrackers, TrackingParams } from '@/lib/supabase/types';
 
 const CURRENCY_OPTIONS = [
@@ -36,18 +37,21 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
     ? initialProduct.price
     : (initialProduct.regional_pricing?.[activeCurrency] ?? initialProduct.price);
   const flexiblePricing = initialProduct.pay_what_you_want && !offerId;
-  const [selectedAmount, setSelectedAmount] = useState<number | 'other' | null>(null);
+  const amountFromUrl = parseCheckoutAmount(searchParams?.get('amount'));
+  const [selectedAmount, setSelectedAmount] = useState<number | 'other' | 'url' | null>(
+    amountFromUrl !== null ? 'url' : null
+  );
   const [otherAmount, setOtherAmount] = useState('');
   const [customPriceTouched, setCustomPriceTouched] = useState(false);
 
   useEffect(() => {
-    setSelectedAmount(null);
+    setSelectedAmount(amountFromUrl !== null ? 'url' : null);
     setOtherAmount('');
     setCustomPriceTouched(false);
-  }, [activePrice, activeCurrency]);
+  }, [activePrice, activeCurrency, amountFromUrl]);
 
   const customPriceIsValid = selectedAmount !== null && (
-    selectedAmount !== 'other' || (
+    selectedAmount === 'url' ? amountFromUrl !== null : selectedAmount !== 'other' || (
       /^\d+(?:\.\d{1,2})?$/.test(otherAmount) &&
       Number.isFinite(Number(otherAmount)) &&
       Math.round(Number(otherAmount) * 100) >= 200
@@ -56,7 +60,9 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
   const customPriceIsBelowMinimum = selectedAmount === 'other' && otherAmount !== ''
     && Number.isFinite(Number(otherAmount))
     && Math.round(Number(otherAmount) * 100) < 200;
-  const customPriceInCents = selectedAmount === 'other'
+  const customPriceInCents = selectedAmount === 'url'
+    ? amountFromUrl ?? 0
+    : selectedAmount === 'other'
     ? (customPriceIsValid ? Math.round(Number(otherAmount) * 100) : 0)
     : typeof selectedAmount === 'number' ? selectedAmount * 100 : 0;
 
@@ -177,6 +183,11 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
             )}
             {flexiblePricing && (
               <div>
+                {amountFromUrl !== null ? (
+                  <p className="font-sans text-sm font-medium text-foreground">
+                    {getCurrencySymbol(activeCurrency)} {(amountFromUrl / 100).toFixed(2)}
+                  </p>
+                ) : <>
                 <p className="mb-3 block font-sans text-xs tracking-[0.15em] uppercase text-muted-foreground">
                   {copy.choosePriceEspyral}
                 </p>
@@ -241,6 +252,7 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
                 ) : customPriceTouched && selectedAmount === 'other' && otherAmount !== '' && !customPriceIsValid ? (
                   <p className="mt-1 text-xs text-red-700">{copy.invalidPrice}</p>
                 ) : null}
+                </>}
               </div>
             )}
             <EspyralBuyerForm value={buyerInfo} onChange={setBuyerInfo} language={language} />
