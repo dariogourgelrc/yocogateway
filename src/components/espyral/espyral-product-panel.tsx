@@ -14,6 +14,7 @@ interface Props {
   selectedBumps: Set<string>;
   total: number;
   formValid: boolean;
+  showPrices: boolean;
   language: CheckoutLanguage;
   onToggleBump: (id: string) => void;
 }
@@ -22,7 +23,7 @@ function formatPrice(cents: number, currency: string, language: CheckoutLanguage
   return new Intl.NumberFormat(language === 'pt' ? 'pt-PT' : 'en-ZA', { style: 'currency', currency, minimumFractionDigits: 2 }).format(cents / 100);
 }
 
-export function EspyralProductPanel({ product, selectedBumps, total, formValid, onToggleBump, language }: Props) {
+export function EspyralProductPanel({ product, selectedBumps, total, formValid, showPrices, onToggleBump, language }: Props) {
   const copy = getCheckoutCopy(language);
   return (
     <div className="space-y-6">
@@ -46,10 +47,10 @@ export function EspyralProductPanel({ product, selectedBumps, total, formValid, 
       </div>
 
       {/* Price */}
-      <div className="flex items-center justify-between border-t border-border pt-4">
+      {showPrices && <div className="flex items-center justify-between border-t border-border pt-4">
         <span className="font-sans text-xs tracking-[0.2em] uppercase text-muted-foreground">{copy.product}</span>
         <span className="font-sans text-sm text-foreground">{formatPrice(product.price, product.currency, language)}</span>
-      </div>
+      </div>}
 
       {/* Order bumps — shown after form is valid */}
       {product.order_bumps.length > 0 && formValid && (
@@ -69,10 +70,10 @@ export function EspyralProductPanel({ product, selectedBumps, total, formValid, 
       )}
 
       {/* Total */}
-      <div className="flex items-center justify-between border-t border-foreground pt-4">
+      {showPrices && <div className="flex items-center justify-between border-t border-foreground pt-4">
         <span className="font-serif text-base text-foreground">{copy.total}</span>
         <span className="font-serif text-lg text-foreground">{formatPrice(total, product.currency, language)}</span>
-      </div>
+      </div>}
     </div>
   );
 }

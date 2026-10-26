@@ -36,23 +36,29 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
     ? initialProduct.price
     : (initialProduct.regional_pricing?.[activeCurrency] ?? initialProduct.price);
   const flexiblePricing = initialProduct.pay_what_you_want && !offerId;
-  const [customPrice, setCustomPrice] = useState((activePrice / 100).toFixed(2));
+  const [selectedAmount, setSelectedAmount] = useState<number | 'other' | null>(null);
+  const [otherAmount, setOtherAmount] = useState('');
   const [customPriceTouched, setCustomPriceTouched] = useState(false);
 
   useEffect(() => {
-    setCustomPrice((activePrice / 100).toFixed(2));
+    setSelectedAmount(null);
+    setOtherAmount('');
     setCustomPriceTouched(false);
   }, [activePrice, activeCurrency]);
 
-  const customPriceIsValid = /^\d+(?:\.\d{1,2})?$/.test(customPrice)
-    && Number.isFinite(Number(customPrice))
-    && Math.round(Number(customPrice) * 100) >= 200;
-  const customPriceIsBelowMinimum = customPrice !== ''
-    && Number.isFinite(Number(customPrice))
-    && Math.round(Number(customPrice) * 100) < 200;
-  const customPriceInCents = customPriceIsValid
-    ? Math.round(Number(customPrice) * 100)
-    : activePrice;
+  const customPriceIsValid = selectedAmount !== null && (
+    selectedAmount !== 'other' || (
+      /^\d+(?:\.\d{1,2})?$/.test(otherAmount) &&
+      Number.isFinite(Number(otherAmount)) &&
+      Math.round(Number(otherAmount) * 100) >= 200
+    )
+  );
+  const customPriceIsBelowMinimum = selectedAmount === 'other' && otherAmount !== ''
+    && Number.isFinite(Number(otherAmount))
+    && Math.round(Number(otherAmount) * 100) < 200;
+  const customPriceInCents = selectedAmount === 'other'
+    ? (customPriceIsValid ? Math.round(Number(otherAmount) * 100) : 0)
+    : typeof selectedAmount === 'number' ? selectedAmount * 100 : 0;
 
   const product = useMemo(
     () => ({
@@ -140,6 +146,7 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
             selectedBumps={selectedBumps}
             total={total}
             formValid={formValid}
+            showPrices={!flexiblePricing || customPriceIsValid}
             language={language}
             onToggleBump={toggleBump}
           />
@@ -170,28 +177,68 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
             )}
             {flexiblePricing && (
               <div>
-                <label htmlFor="espyral-custom-price" className="mb-1 block font-sans text-xs tracking-[0.15em] uppercase text-muted-foreground">
+                <p className="mb-3 block font-sans text-xs tracking-[0.15em] uppercase text-muted-foreground">
                   {copy.choosePriceEspyral}
-                </label>
-                <div className="flex items-center border border-border">
-                  <span className="px-4 font-sans text-sm text-muted-foreground">{getCurrencySymbol(activeCurrency)}</span>
-                  <input
-                    id="espyral-custom-price"
-                    type="number"
-                    min="2"
-                    step="0.01"
-                    inputMode="decimal"
-                    value={customPrice}
-                    onChange={(e) => {
-                      setCustomPrice(e.target.value);
-                      setCustomPriceTouched(true);
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[2, 5, 10, 25, 50, 100].map((amount) => (
+                    <button
+                      key={amount}
+                      type="button"
+                      aria-pressed={selectedAmount === amount}
+                      onClick={() => {
+                        setSelectedAmount(amount);
+                        setCustomPriceTouched(false);
+                      }}
+                      className={`border px-3 py-2 font-sans text-sm transition-colors ${
+                        selectedAmount === amount
+                          ? 'border-foreground bg-foreground text-primary-foreground'
+                          : 'border-border text-foreground hover:border-foreground'
+                      }`}
+                    >
+                      {getCurrencySymbol(activeCurrency)} {amount}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    aria-pressed={selectedAmount === 'other'}
+                    onClick={() => {
+                      setSelectedAmount('other');
+                      setCustomPriceTouched(false);
                     }}
-                    className="w-full bg-background px-4 py-3 font-sans text-sm text-foreground"
-                  />
+                    className={`border px-3 py-2 font-sans text-sm transition-colors ${
+                      selectedAmount === 'other'
+                        ? 'border-foreground bg-foreground text-primary-foreground'
+                        : 'border-border text-foreground hover:border-foreground'
+                    }`}
+                  >
+                    {copy.other}
+                  </button>
                 </div>
+                {selectedAmount === 'other' && (
+                  <div className="mt-3 flex items-center border border-border">
+                    <label htmlFor="espyral-custom-price" className="px-4 font-sans text-sm text-muted-foreground">
+                      {getCurrencySymbol(activeCurrency)}
+                    </label>
+                    <input
+                      id="espyral-custom-price"
+                      type="number"
+                      min="2"
+                      step="0.01"
+                      inputMode="decimal"
+                      required
+                      value={otherAmount}
+                      onChange={(e) => {
+                        setOtherAmount(e.target.value);
+                        setCustomPriceTouched(true);
+                      }}
+                      className="w-full bg-background px-4 py-3 font-sans text-sm text-foreground"
+                    />
+                  </div>
+                )}
                 {customPriceTouched && customPriceIsBelowMinimum ? (
                   <p className="mt-1 text-xs text-red-700">{copy.belowMinimum}</p>
-                ) : customPriceTouched && customPrice !== '' && !customPriceIsValid ? (
+                ) : customPriceTouched && selectedAmount === 'other' && otherAmount !== '' && !customPriceIsValid ? (
                   <p className="mt-1 text-xs text-red-700">{copy.invalidPrice}</p>
                 ) : null}
               </div>
