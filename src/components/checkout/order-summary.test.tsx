@@ -10,6 +10,7 @@ const mockProduct: Product = {
   name: "Test Product",
   description: "",
   price: 5000,
+  pay_what_you_want: false,
   currency: "NAD",
   image_url: "https://example.com/img.jpg",
   delivery_url: "",
@@ -55,7 +56,7 @@ describe("OrderSummary", () => {
     // Subtotal and Total both show N$ 50.00 when no bumps selected
     const prices = screen.getAllByText("N$ 50.00");
     expect(prices.length).toBe(2);
-    expect(screen.getByText("Subtotal")).toBeInTheDocument();
+    expect(screen.getByText("Total")).toBeInTheDocument();
   });
 
   it("shows selected bump prices", () => {
@@ -67,7 +68,7 @@ describe("OrderSummary", () => {
       />
     );
 
-    expect(screen.getByText("Extra Guide")).toBeInTheDocument();
+    expect(screen.getByText(/Extra Guide/)).toBeInTheDocument();
     expect(screen.getByText("N$ 15.00")).toBeInTheDocument();
   });
 
@@ -89,6 +90,6 @@ describe("OrderSummary", () => {
       <OrderSummary product={mockProduct} selectedBumps={[]} total={5000} />
     );
 
-    expect(screen.queryByText("Extra Guide")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Extra Guide/)).not.toBeInTheDocument();
   });
 });

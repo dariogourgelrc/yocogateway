@@ -33,6 +33,9 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
   const [price, setPrice] = useState(
     initialData?.price ? (initialData.price / 100).toFixed(2) : ""
   );
+  const [payWhatYouWant, setPayWhatYouWant] = useState(
+    initialData?.pay_what_you_want || false
+  );
   const [currency, setCurrency] = useState(initialData?.currency || "NAD");
   const [imageUrl, setImageUrl] = useState(initialData?.image_url || "");
   const [deliveryUrl, setDeliveryUrl] = useState(
@@ -156,6 +159,7 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
       slug,
       description,
       price: Math.round(parseFloat(price || "0") * 100),
+      pay_what_you_want: payWhatYouWant,
       currency,
       image_url: imageUrl,
       delivery_url: productType === "digital" ? deliveryUrl : "",
@@ -342,6 +346,23 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
               </select>
             </div>
           </div>
+
+          <label className="flex items-start gap-3 rounded-lg border border-gray-200 p-4">
+            <input
+              type="checkbox"
+              checked={payWhatYouWant}
+              onChange={(e) => setPayWhatYouWant(e.target.checked)}
+              className="mt-1 h-4 w-4 rounded border-gray-300"
+            />
+            <span>
+              <span className="block text-sm font-medium text-gray-900">
+                Deixar o comprador escolher o preço
+              </span>
+              <span className="mt-1 block text-xs text-gray-500">
+                O valor acima será sugerido no checkout. O mínimo permitido é 2,00 na moeda selecionada.
+              </span>
+            </span>
+          </label>
 
           {/* Regional Pricing */}
           <div className="border-t border-gray-100 pt-4 mt-2">

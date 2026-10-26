@@ -51,7 +51,24 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
   const activePrice = offerId
     ? initialProduct.price
     : initialProduct.regional_pricing?.[activeCurrency] ?? initialProduct.price;
-  const product = { ...initialProduct, price: activePrice, currency: activeCurrency };
+  const flexiblePricing = initialProduct.pay_what_you_want && !offerId;
+  const [customPrice, setCustomPrice] = useState((activePrice / 100).toFixed(2));
+
+  useEffect(() => {
+    setCustomPrice((activePrice / 100).toFixed(2));
+  }, [activePrice, activeCurrency]);
+
+  const customPriceIsValid = /^\d+(?:\.\d{1,2})?$/.test(customPrice)
+    && Number.isFinite(Number(customPrice))
+    && Math.round(Number(customPrice) * 100) >= 200;
+  const customPriceInCents = customPriceIsValid
+    ? Math.round(Number(customPrice) * 100)
+    : activePrice;
+  const product = {
+    ...initialProduct,
+    price: flexiblePricing ? customPriceInCents : activePrice,
+    currency: activeCurrency,
+  };
 
   const [shippingAddress, setShippingAddress] = useState<ShippingInfo>(
     recoverData?.address || { address_line: "", city: "", postal_code: "", country: "" }
@@ -148,6 +165,7 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
     buyerInfo.name.trim() !== "" &&
     buyerInfo.email.trim() !== "" &&
     buyerInfo.phone.trim() !== "" &&
+    (!flexiblePricing || customPriceIsValid) &&
     shippingValid;
 
   const toggleBump = useCallback((bumpId: string) => {
@@ -289,6 +307,34 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
             </div>
           )}
 
+          {flexiblePricing && (
+            <div className="border-b border-gray-100 px-5 py-4">
+              <label htmlFor="custom-product-price" className="mb-1 block text-sm font-medium text-gray-900">
+                Escolha quanto deseja pagar
+              </label>
+              <p className="mb-2 text-xs text-gray-500">
+                Valor sugerido: {(activePrice / 100).toFixed(2)} {activeCurrency}. Mínimo: 2,00 {activeCurrency}.
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-500">{activeCurrency}</span>
+                <input
+                  id="custom-product-price"
+                  type="number"
+                  min="2"
+                  step="0.01"
+                  inputMode="decimal"
+                  required
+                  value={customPrice}
+                  onChange={(e) => setCustomPrice(e.target.value)}
+                  className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black"
+                />
+              </div>
+              {customPrice !== "" && !customPriceIsValid && (
+                <p className="mt-1 text-xs text-red-600">Informe um valor válido de pelo menos 2,00.</p>
+              )}
+            </div>
+          )}
+
           {/* Buyer form — collapses to summary when data is pre-filled (upsell mode) */}
           <div className="border-b border-gray-100 px-5 py-4">
             {!editingBuyer ? (
@@ -385,6 +431,7 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
                 productName={product.name}
                 total={total}
                 currency={product.currency}
+                customPrice={flexiblePricing ? customPriceInCents : undefined}
                 slug={product.slug}
                 upsellUrl={product.upsell_url}
                 disabled={!formValid || paymentStatus === "processing"}

@@ -29,10 +29,27 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
   const activePrice = offerId
     ? initialProduct.price
     : (initialProduct.regional_pricing?.[activeCurrency] ?? initialProduct.price);
+  const flexiblePricing = initialProduct.pay_what_you_want && !offerId;
+  const [customPrice, setCustomPrice] = useState((activePrice / 100).toFixed(2));
+
+  useEffect(() => {
+    setCustomPrice((activePrice / 100).toFixed(2));
+  }, [activePrice, activeCurrency]);
+
+  const customPriceIsValid = /^\d+(?:\.\d{1,2})?$/.test(customPrice)
+    && Number.isFinite(Number(customPrice))
+    && Math.round(Number(customPrice) * 100) >= 200;
+  const customPriceInCents = customPriceIsValid
+    ? Math.round(Number(customPrice) * 100)
+    : activePrice;
 
   const product = useMemo(
-    () => ({ ...initialProduct, price: activePrice, currency: activeCurrency }),
-    [initialProduct, activePrice, activeCurrency]
+    () => ({
+      ...initialProduct,
+      price: flexiblePricing ? customPriceInCents : activePrice,
+      currency: activeCurrency,
+    }),
+    [initialProduct, activePrice, activeCurrency, flexiblePricing, customPriceInCents]
   );
 
   const availableCurrencies = useMemo(() => {
@@ -75,7 +92,8 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
   const formValid =
     buyerInfo.name.trim() !== '' &&
     buyerInfo.email.trim() !== '' &&
-    buyerInfo.phone.trim() !== '';
+    buyerInfo.phone.trim() !== '' &&
+    (!flexiblePricing || customPriceIsValid);
 
   const toggleBump = useCallback((bumpId: string) => {
     setSelectedBumps((prev) => {
@@ -138,6 +156,26 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
                 </div>
               </div>
             )}
+            {flexiblePricing && (
+              <div>
+                <label htmlFor="espyral-custom-price" className="mb-1 block font-sans text-xs tracking-[0.15em] uppercase text-muted-foreground">
+                  Choose your price (minimum 2.00 {activeCurrency})
+                </label>
+                <input
+                  id="espyral-custom-price"
+                  type="number"
+                  min="2"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={customPrice}
+                  onChange={(e) => setCustomPrice(e.target.value)}
+                  className="w-full border border-border bg-background px-4 py-3 font-sans text-sm text-foreground"
+                />
+                {customPrice !== '' && !customPriceIsValid && (
+                  <p className="mt-1 text-xs text-red-700">Enter a valid amount of at least 2.00.</p>
+                )}
+              </div>
+            )}
             <EspyralBuyerForm value={buyerInfo} onChange={setBuyerInfo} />
             {paymentStatus === 'failed' && (
               <p className="text-sm font-sans text-red-700">Payment failed. Please try again.</p>
@@ -148,6 +186,7 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
               slug={product.slug}
               currency={product.currency}
               total={total}
+              customPrice={flexiblePricing ? customPriceInCents : undefined}
               disabled={!formValid || paymentStatus === 'processing'}
               buyerName={buyerInfo.name}
               buyerEmail={buyerInfo.email}

@@ -17,6 +17,7 @@ export interface Product {
   name: string;
   description: string;
   price: number; // cents
+  pay_what_you_want: boolean;
   currency: string; // "NAD", "ZAR"
   image_url: string;
   delivery_url: string;
@@ -174,6 +175,7 @@ export interface CreateOrderRequest {
   product_id: string;
   offer_id?: string; // if purchasing via an offer slug
   currency?: string; // regional pricing override (e.g. "ZAR", "BWP")
+  custom_price?: number; // buyer-selected product price in cents
   buyer_name: string;
   buyer_email: string;
   buyer_phone: string;

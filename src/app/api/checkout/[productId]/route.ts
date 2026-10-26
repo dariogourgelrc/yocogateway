@@ -123,12 +123,29 @@ export async function POST(
       basePrice = product.regional_pricing[body.currency];
     }
 
-    // If an offer is specified, use its price (overrides regional)
+    // If an offer is specified, use its fixed price (overrides regional/custom pricing).
+    let hasValidOffer = false;
     if (body.offer_id) {
       const offer = await getOfferById(body.offer_id);
       if (offer && offer.product_id === productId) {
         basePrice = offer.price;
+        hasValidOffer = true;
       }
+    }
+
+    // Buyer-selected amounts are accepted only for enabled products, and are
+    // always validated server-side in minor currency units (2.00 minimum).
+    if (product.pay_what_you_want && !hasValidOffer) {
+      if (
+        !Number.isSafeInteger(body.custom_price) ||
+        (body.custom_price as number) < 200
+      ) {
+        return NextResponse.json(
+          { error: "The selected price must be at least 2.00" },
+          { status: 400 }
+        );
+      }
+      basePrice = body.custom_price as number;
     }
 
     // Filter to only selected bumps

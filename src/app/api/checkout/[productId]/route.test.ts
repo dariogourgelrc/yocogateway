@@ -3,11 +3,15 @@ import { NextRequest } from "next/server";
 // --- Mocks ---
 const mockProduct = {
   id: "prod-1",
+  user_id: "user-1",
+  type: "digital" as const,
   slug: "test-product",
   name: "Test Product",
   description: "",
   price: 5000,
+  pay_what_you_want: false,
   currency: "NAD",
+  regional_pricing: {},
   image_url: "",
   delivery_url: "",
   upsell_url: null,
@@ -16,6 +20,9 @@ const mockProduct = {
   remarketing_offer_1: null,
   remarketing_offer_2: null,
   remarketing_offer_3: null,
+  stripe_secret_key: "sk_test",
+  stripe_publishable_key: "pk_test",
+  payment_provider: "stripe" as const,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
   order_bumps: [],
@@ -62,9 +69,9 @@ const mockOrderItems = [
   },
 ];
 
-const mockYocoSession = {
-  id: "yoco-session-1",
-  redirectUrl: "https://payments.yoco.com/checkout/yoco-session-1",
+const mockStripeSession = {
+  id: "stripe-session-1",
+  clientSecret: "secret-1",
 };
 
 jest.mock("@/lib/db/products", () => ({
@@ -94,8 +101,13 @@ jest.mock("@/lib/db/product-offers", () => ({
   getOfferById: jest.fn().mockResolvedValue(null),
 }));
 
-jest.mock("@/lib/yoco/create-session", () => ({
-  createYocoSession: jest.fn().mockResolvedValue(mockYocoSession),
+jest.mock("@/lib/stripe/create-session", () => ({
+  createStripeSession: jest.fn().mockResolvedValue(mockStripeSession),
+}));
+
+jest.mock("@/lib/whop/create-session", () => ({
+  createWhopSession: jest.fn(),
+  resolveWhopCurrency: jest.fn((currency: string) => currency.toLowerCase()),
 }));
 
 jest.mock("@/lib/trackers/server-registry", () => ({
@@ -114,7 +126,8 @@ jest.mock("@/lib/supabase/server", () => ({
 
 import { POST } from "./route";
 import { createOrder } from "@/lib/db/orders";
-import { createYocoSession } from "@/lib/yoco/create-session";
+import { getProductById } from "@/lib/db/products";
+import { createStripeSession } from "@/lib/stripe/create-session";
 
 function makeRequest(body: Record<string, unknown>): NextRequest {
   return new NextRequest("http://localhost:3000/api/checkout/prod-1", {
@@ -144,19 +157,24 @@ const params = Promise.resolve({ productId: "prod-1" });
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockProduct.pay_what_you_want = false;
   (createOrder as jest.Mock).mockResolvedValue(mockOrder);
-  (createYocoSession as jest.Mock).mockResolvedValue(mockYocoSession);
+  (getProductById as jest.Mock).mockImplementation((id: string) => {
+    if (id === "prod-1") return Promise.resolve(mockProduct);
+    throw new Error(`Failed to fetch product by id "${id}": not found`);
+  });
+  (createStripeSession as jest.Mock).mockResolvedValue(mockStripeSession);
 });
 
 describe("POST /api/checkout/[productId]", () => {
   // --- Happy path ---
-  it("creates order and returns redirect_url on valid request", async () => {
+  it("creates order and returns Stripe checkout details on valid request", async () => {
     const res = await POST(makeRequest(validBody), { params });
     const json = await res.json();
 
     expect(res.status).toBe(200);
     expect(json.order_id).toBe("order-1");
-    expect(json.redirect_url).toBe(mockYocoSession.redirectUrl);
+    expect(json.client_secret).toBe(mockStripeSession.clientSecret);
   });
 
   // --- Validation ---
@@ -222,6 +240,35 @@ describe("POST /api/checkout/[productId]", () => {
     );
   });
 
+  it("uses the buyer-selected price when flexible pricing is enabled", async () => {
+    mockProduct.pay_what_you_want = true;
+    const res = await POST(
+      makeRequest({ ...validBody, custom_price: 3250, selected_bump_ids: ["bump-1"] }),
+      { params }
+    );
+
+    expect(res.status).toBe(200);
+    expect(createOrder).toHaveBeenCalledWith(
+      expect.objectContaining({ total_amount: 4250 })
+    );
+  });
+
+  it("rejects buyer-selected prices below the 2.00 minimum", async () => {
+    mockProduct.pay_what_you_want = true;
+    const res = await POST(makeRequest({ ...validBody, custom_price: 199 }), { params });
+
+    expect(res.status).toBe(400);
+    expect(createOrder).not.toHaveBeenCalled();
+  });
+
+  it("requires a valid buyer-selected price for flexible products", async () => {
+    mockProduct.pay_what_you_want = true;
+    const res = await POST(makeRequest(validBody), { params });
+
+    expect(res.status).toBe(400);
+    expect(createOrder).not.toHaveBeenCalled();
+  });
+
   it("ignores bump IDs that don't belong to this product", async () => {
     const res = await POST(
       makeRequest({
@@ -260,15 +307,15 @@ describe("POST /api/checkout/[productId]", () => {
     expect(res.status).toBe(500);
   });
 
-  it("returns 500 when Yoco API fails", async () => {
-    (createYocoSession as jest.Mock).mockRejectedValueOnce(
-      new Error("Yoco API down")
+  it("returns 500 when Stripe API fails", async () => {
+    (createStripeSession as jest.Mock).mockRejectedValueOnce(
+      new Error("Stripe API down")
     );
 
     const res = await POST(makeRequest(validBody), { params });
     const json = await res.json();
 
     expect(res.status).toBe(500);
-    expect(json.error).toContain("Yoco API down");
+    expect(json.error).toContain("Stripe API down");
   });
 });

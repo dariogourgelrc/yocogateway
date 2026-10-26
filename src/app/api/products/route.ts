@@ -16,6 +16,7 @@ interface CreateProductBody {
   slug?: string;
   description: string;
   price: number;
+  pay_what_you_want?: boolean;
   currency: string;
   image_url: string;
   delivery_url: string;
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
       slug: body.slug || generateSlug(body.name),
       description: body.description || "",
       price: body.price,
+      pay_what_you_want: body.pay_what_you_want ?? false,
       currency: body.currency,
       image_url: body.image_url || "",
       delivery_url: body.delivery_url || "",

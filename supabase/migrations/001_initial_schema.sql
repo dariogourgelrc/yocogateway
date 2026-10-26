@@ -16,6 +16,7 @@ create table products (
   name text not null,
   description text not null default '',
   price integer not null check (price >= 0),
+  pay_what_you_want boolean not null default false,
   currency text not null default 'NAD',
   image_url text not null default '',
   delivery_url text not null default '',

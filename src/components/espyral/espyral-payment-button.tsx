@@ -9,6 +9,7 @@ interface Props {
   slug: string;
   currency: string;
   total: number;
+  customPrice?: number;
   disabled: boolean;
   buyerName: string;
   buyerEmail: string;
@@ -26,6 +27,7 @@ export function EspyralPaymentButton({
   offerId,
   slug,
   currency,
+  customPrice,
   disabled,
   buyerName,
   buyerEmail,
@@ -59,6 +61,7 @@ export function EspyralPaymentButton({
           selected_bump_ids: selectedBumpIds,
           tracking_params: { ...trackingParams, event_id: eventId },
           currency,
+          custom_price: customPrice,
           // Tell the API to use the Espyral success page URL
           success_path_prefix: `/espyral/checkout/${slug}/success`,
         }),
@@ -78,7 +81,7 @@ export function EspyralPaymentButton({
       onPaymentFailure(message);
       setLoading(false);
     }
-  }, [productId, offerId, currency, slug, buyerName, buyerEmail, buyerPhone, selectedBumpIds, trackingParams, eventId, onPaymentStart, onPaymentFailure]);
+  }, [productId, offerId, currency, customPrice, slug, buyerName, buyerEmail, buyerPhone, selectedBumpIds, trackingParams, eventId, onPaymentStart, onPaymentFailure]);
 
   if (clientSecret && stripePromise) {
     return (

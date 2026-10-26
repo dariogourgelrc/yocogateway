@@ -15,6 +15,7 @@ interface StripePaymentProps {
   offerId?: string;
   productName: string;
   total: number;
+  customPrice?: number;
   currency: string;
   slug: string;
   upsellUrl: string | null;
@@ -36,6 +37,7 @@ export function StripePayment({
   productId,
   offerId,
   total,
+  customPrice,
   currency,
   disabled,
   autoLoad,
@@ -92,6 +94,7 @@ export function StripePayment({
           shipping_address: shippingAddress || undefined,
           tracking_params: { ...trackingParams, event_id: eventId },
           currency,
+          custom_price: customPrice,
         }),
       });
 
@@ -119,6 +122,7 @@ export function StripePayment({
     productId,
     offerId,
     currency,
+    customPrice,
     buyerName,
     buyerEmail,
     buyerPhone,

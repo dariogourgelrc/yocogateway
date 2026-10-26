@@ -36,6 +36,7 @@ export async function POST(
       slug: newSlug,
       description: source.description,
       price: source.price,
+      pay_what_you_want: source.pay_what_you_want,
       currency: source.currency,
       image_url: source.image_url,
       delivery_url: source.delivery_url,
