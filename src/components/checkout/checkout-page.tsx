@@ -11,6 +11,7 @@ import { StripePayment } from "./stripe-payment";
 import { useTracker } from "@/hooks/use-tracker";
 import { extractUtmParams } from "@/lib/trackers/utm";
 import { generateEventId } from "@/lib/utils/event-id";
+import { getCheckoutCopy, normalizeCheckoutLanguage, type CheckoutLanguage } from "@/lib/i18n/checkout-copy";
 import type {
   ProductWithBumpsAndTrackers,
   TrackingParams,
@@ -43,6 +44,10 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
   // Always use detected currency — same price number, just different currency symbol.
   // If regional_pricing has a specific price for that currency, use it; otherwise keep base price.
   const initialCurrency = detectedCurrency || initialProduct.currency;
+  const [language, setLanguage] = useState<CheckoutLanguage>(
+    normalizeCheckoutLanguage(searchParams?.get("lang") || initialProduct.checkout_language)
+  );
+  const copy = getCheckoutCopy(language);
 
   const [activeCurrency, setActiveCurrency] = useState(initialCurrency);
 
@@ -205,7 +210,7 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
         if (product.upsell_url) {
           window.location.href = product.upsell_url;
         } else {
-          router.push(`/checkout/${product.slug}/success`);
+          router.push(`/checkout/${product.slug}/success?lang=${language}&order_id=${orderId}`);
         }
       }, 500);
     },
@@ -218,7 +223,7 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div lang={language === "pt" ? "pt" : "en"} className="min-h-screen bg-gray-50">
       {/* Exit intent modal */}
       {showExitIntent && exitIntentOffer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
@@ -226,7 +231,7 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
             <button
               onClick={() => setShowExitIntent(false)}
               className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
-              aria-label="Close"
+              aria-label={copy.close}
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -239,14 +244,14 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
               </div>
             )}
 
-            <h2 className="mb-1 text-center text-xl font-bold text-gray-900">Wait! Special offer</h2>
-            <p className="mb-5 text-center text-sm text-gray-500">Don&apos;t miss this one-time opportunity</p>
+            <h2 className="mb-1 text-center text-xl font-bold text-gray-900">{copy.wait}</h2>
+            <p className="mb-5 text-center text-sm text-gray-500">{copy.exitDescription}</p>
 
             <div className="mb-5 rounded-xl border border-blue-100 bg-blue-50 px-4 py-4 text-center">
               <span className="inline-block rounded-full bg-blue-600 px-3 py-0.5 text-xs font-bold text-white">
-                EXCLUSIVE DISCOUNT
+                {copy.exclusiveDiscount}
               </span>
-              <p className="mt-2 text-sm text-gray-600">A special price reserved just for you</p>
+              <p className="mt-2 text-sm text-gray-600">{copy.specialPrice}</p>
             </div>
 
             <button
@@ -255,18 +260,19 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
                 if (buyerInfo.name) params.set("prefill_name", buyerInfo.name);
                 if (buyerInfo.email) params.set("prefill_email", buyerInfo.email);
                 if (buyerInfo.phone) params.set("prefill_phone", buyerInfo.phone);
+                params.set("lang", language);
                 const qs = params.toString();
                 window.location.href = `/checkout/${exitIntentOffer.slug}${qs ? "?" + qs : ""}`;
               }}
               className="mb-3 w-full rounded-full bg-blue-600 py-3 text-base font-bold text-white hover:bg-blue-700 active:scale-[0.98] transition-all"
             >
-              I want the discount!
+              {copy.acceptOffer}
             </button>
             <button
               onClick={() => setShowExitIntent(false)}
               className="w-full text-center text-sm text-gray-400 hover:text-gray-600"
             >
-              No thanks, I prefer to pay full price.
+              {copy.declineOffer}
             </button>
           </div>
         </div>
@@ -285,13 +291,26 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
               </button>
             )}
             <ProductInfo product={product} />
+            <div className="mt-3 flex items-center justify-end gap-2">
+              <label htmlFor="checkout-language" className="text-xs text-gray-500">{copy.language}:</label>
+              <select
+                id="checkout-language"
+                value={language}
+                onChange={(e) => setLanguage(normalizeCheckoutLanguage(e.target.value))}
+                className="rounded border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-black"
+                aria-label={copy.language}
+              >
+                <option value="en">{copy.english}</option>
+                <option value="pt">{copy.portuguese}</option>
+              </select>
+            </div>
           </div>
 
           {/* Country / currency selector — hidden on offer checkouts (offers have no regional pricing) */}
           {!offerId && Object.keys(initialProduct.regional_pricing || {}).length > 0 && (
             <div className="border-b border-gray-100 px-5 py-3">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Paying from:</span>
+                <span className="text-xs text-gray-500">{copy.payingFrom}</span>
                 <select
                   value={activeCurrency}
                   onChange={(e) => setActiveCurrency(e.target.value)}
@@ -310,10 +329,10 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
           {flexiblePricing && (
             <div className="border-b border-gray-100 px-5 py-4">
               <label htmlFor="custom-product-price" className="mb-1 block text-sm font-medium text-gray-900">
-                Escolha quanto deseja pagar
+                {copy.choosePrice}
               </label>
               <p className="mb-2 text-xs text-gray-500">
-                Valor sugerido: {(activePrice / 100).toFixed(2)} {activeCurrency}. Mínimo: 2,00 {activeCurrency}.
+                {copy.suggestedPrice}: {(activePrice / 100).toFixed(2)} {activeCurrency}. {copy.minimum}: 2.00 {activeCurrency}.
               </p>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-gray-500">{activeCurrency}</span>
@@ -330,7 +349,7 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
                 />
               </div>
               {customPrice !== "" && !customPriceIsValid && (
-                <p className="mt-1 text-xs text-red-600">Informe um valor válido de pelo menos 2,00.</p>
+                <p className="mt-1 text-xs text-red-600">{copy.invalidPrice}</p>
               )}
             </div>
           )}
@@ -348,11 +367,11 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
                   onClick={() => setEditingBuyer(true)}
                   className="shrink-0 text-xs text-gray-500 underline hover:text-gray-800"
                 >
-                  Edit
+                  {copy.edit}
                 </button>
               </div>
             ) : (
-              <BuyerForm value={buyerInfo} onChange={setBuyerInfo} />
+              <BuyerForm value={buyerInfo} onChange={setBuyerInfo} language={language} />
             )}
           </div>
 
@@ -364,7 +383,7 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
             buyerInfo.email.trim() !== "" &&
             buyerInfo.phone.trim() !== "" && (
               <div className="border-b border-gray-100 px-5 py-4">
-                <ShippingForm value={shippingAddress} onChange={setShippingAddress} />
+                <ShippingForm value={shippingAddress} onChange={setShippingAddress} language={language} />
               </div>
             )}
 
@@ -374,7 +393,7 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
               {!editingShipping ? (
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs text-gray-500 mb-0.5">Delivery address</p>
+                    <p className="text-xs text-gray-500 mb-0.5">{copy.deliveryAddress}</p>
                     <p className="text-sm font-medium text-gray-900 truncate">{shippingAddress.address_line}</p>
                     <p className="text-xs text-gray-500 truncate">{shippingAddress.city} · {shippingAddress.postal_code} · {shippingAddress.country}</p>
                   </div>
@@ -383,11 +402,11 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
                     onClick={() => setEditingShipping(true)}
                     className="shrink-0 text-xs text-gray-500 underline hover:text-gray-800"
                   >
-                    Edit
+                    {copy.edit}
                   </button>
                 </div>
               ) : (
-                <ShippingForm value={shippingAddress} onChange={setShippingAddress} />
+                <ShippingForm value={shippingAddress} onChange={setShippingAddress} language={language} />
               )}
             </div>
           )}
@@ -401,7 +420,7 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
               }}
             >
               <p className="mb-3 text-sm font-semibold text-gray-900">
-                Add to your order
+                {copy.addToOrder}
               </p>
               <div className="space-y-2">
                 {product.order_bumps.map((bump) => (
@@ -423,6 +442,7 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
               product={product}
               selectedBumps={selectedBumpsList}
               total={total}
+              language={language}
             />
             <div className="mt-4">
               <StripePayment
@@ -432,10 +452,11 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
                 total={total}
                 currency={product.currency}
                 customPrice={flexiblePricing ? customPriceInCents : undefined}
+                language={language}
                 slug={product.slug}
                 upsellUrl={product.upsell_url}
                 disabled={!formValid || paymentStatus === "processing"}
-                autoLoad={product.type === "physical"}
+                autoLoad={product.type === "physical" && !flexiblePricing}
                 buyerName={buyerInfo.name}
                 buyerEmail={buyerInfo.email}
                 buyerPhone={buyerInfo.phone}

@@ -1,16 +1,19 @@
 import type { Product, OrderBump } from "@/lib/supabase/types";
 import { formatCurrency } from "@/lib/utils/currency";
+import { getCheckoutCopy, type CheckoutLanguage } from "@/lib/i18n/checkout-copy";
 
 interface OrderSummaryProps {
   product: Product;
   selectedBumps: OrderBump[];
   total: number;
+  language?: CheckoutLanguage;
 }
 
-export function OrderSummary({ product, selectedBumps, total }: OrderSummaryProps) {
+export function OrderSummary({ product, selectedBumps, total, language = "en" }: OrderSummaryProps) {
+  const copy = getCheckoutCopy(language);
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-semibold text-gray-900">Order summary</h2>
+      <h2 className="text-lg font-semibold text-gray-900">{copy.orderSummary}</h2>
       <div className="space-y-2">
         <div className="flex items-center gap-2 text-sm">
           <img
@@ -20,22 +23,22 @@ export function OrderSummary({ product, selectedBumps, total }: OrderSummaryProp
           />
           <span className="flex-1 text-gray-700">{product.name}</span>
           <span className="font-medium text-gray-900">
-            {formatCurrency(product.price, product.currency)}
+            {formatCurrency(product.price, product.currency, language)}
           </span>
         </div>
         {selectedBumps.map((bump) => (
           <div key={bump.id} className="flex items-center gap-2 text-sm">
             <span className="flex-1 text-gray-700">+ {bump.name}</span>
             <span className="font-medium text-gray-900">
-              {formatCurrency(bump.price, product.currency)}
+              {formatCurrency(bump.price, product.currency, language)}
             </span>
           </div>
         ))}
       </div>
       <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-        <span className="text-sm font-semibold text-gray-900">Total</span>
+        <span className="text-sm font-semibold text-gray-900">{copy.total}</span>
         <span className="text-base font-bold text-gray-900">
-          {formatCurrency(total, product.currency)}
+          {formatCurrency(total, product.currency, language)}
         </span>
       </div>
     </div>

@@ -222,10 +222,11 @@ export async function POST(
     const successPathPrefix =
       (body as { success_path_prefix?: string }).success_path_prefix ||
       `/checkout/${product.slug}/success`;
+    const successPath = `${successPathPrefix}${successPathPrefix.includes("?") ? "&" : "?"}order_id=${order.id}`;
 
     const finalDestination =
       product.upsell_url ||
-      `${appUrl}${successPathPrefix}?order_id=${order.id}`;
+      `${appUrl}${successPath}`;
 
     let paymentSessionId: string;
     let responseExtra: Record<string, unknown>;
@@ -264,6 +265,7 @@ export async function POST(
         currency: activeCurrency,
         returnUrl,
         customerEmail: buyerEmail,
+        locale: body.language === "pt" ? "pt-BR" : "en",
         lineItems,
         metadata: { orderId: order.id },
       });

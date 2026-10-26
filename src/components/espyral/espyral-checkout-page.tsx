@@ -8,6 +8,7 @@ import { EspyralPaymentButton } from './espyral-payment-button';
 import { useTracker } from '@/hooks/use-tracker';
 import { extractUtmParams } from '@/lib/trackers/utm';
 import { generateEventId } from '@/lib/utils/event-id';
+import { getCheckoutCopy, normalizeCheckoutLanguage, type CheckoutLanguage } from '@/lib/i18n/checkout-copy';
 import type { ProductWithBumpsAndTrackers, TrackingParams } from '@/lib/supabase/types';
 
 const CURRENCY_OPTIONS = [
@@ -23,6 +24,10 @@ interface EspyralCheckoutPageProps {
 
 export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillData }: EspyralCheckoutPageProps) {
   const searchParams = useSearchParams();
+  const [language, setLanguage] = useState<CheckoutLanguage>(
+    normalizeCheckoutLanguage(initialProduct.checkout_language)
+  );
+  const copy = getCheckoutCopy(language);
 
   const [activeCurrency, setActiveCurrency] = useState(initialProduct.currency);
 
@@ -119,8 +124,8 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
-      <EspyralHeader />
+    <div lang={language === 'pt' ? 'pt' : 'en'} className="min-h-screen bg-background">
+      <EspyralHeader language={language} onLanguageChange={setLanguage} copy={copy} />
       <main className="max-w-6xl mx-auto px-6 md:px-10 py-12 md:py-16">
         <div className="h-px bg-gradient-to-r from-[hsl(var(--gold))] via-[hsl(var(--gold))] to-[hsl(var(--gold))] mb-12" />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
@@ -129,16 +134,17 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
             selectedBumps={selectedBumps}
             total={total}
             formValid={formValid}
+            language={language}
             onToggleBump={toggleBump}
           />
           <div className="space-y-8">
             <div>
-              <p className="text-[10px] font-sans tracking-[0.3em] uppercase text-muted-foreground mb-2">Secure Order</p>
-              <h2 className="font-serif text-3xl text-foreground">Complete Your Purchase</h2>
+              <p className="text-[10px] font-sans tracking-[0.3em] uppercase text-muted-foreground mb-2">{copy.secureOrder}</p>
+              <h2 className="font-serif text-3xl text-foreground">{copy.completeYourPurchase}</h2>
             </div>
             {availableCurrencies.length > 1 && (
               <div className="flex items-center gap-3">
-                <span className="text-xs font-sans tracking-[0.15em] uppercase text-muted-foreground">Currency:</span>
+                <span className="text-xs font-sans tracking-[0.15em] uppercase text-muted-foreground">{copy.currency}</span>
                 <div className="flex gap-2">
                   {availableCurrencies.map((c) => (
                     <button
@@ -159,7 +165,7 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
             {flexiblePricing && (
               <div>
                 <label htmlFor="espyral-custom-price" className="mb-1 block font-sans text-xs tracking-[0.15em] uppercase text-muted-foreground">
-                  Choose your price (minimum 2.00 {activeCurrency})
+                  {copy.choosePriceEspyral} ({copy.minimumAmount} {activeCurrency})
                 </label>
                 <input
                   id="espyral-custom-price"
@@ -172,13 +178,13 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
                   className="w-full border border-border bg-background px-4 py-3 font-sans text-sm text-foreground"
                 />
                 {customPrice !== '' && !customPriceIsValid && (
-                  <p className="mt-1 text-xs text-red-700">Enter a valid amount of at least 2.00.</p>
+                  <p className="mt-1 text-xs text-red-700">{copy.invalidPrice}</p>
                 )}
               </div>
             )}
-            <EspyralBuyerForm value={buyerInfo} onChange={setBuyerInfo} />
+            <EspyralBuyerForm value={buyerInfo} onChange={setBuyerInfo} language={language} />
             {paymentStatus === 'failed' && (
-              <p className="text-sm font-sans text-red-700">Payment failed. Please try again.</p>
+              <p className="text-sm font-sans text-red-700">{copy.paymentFailed}</p>
             )}
             <EspyralPaymentButton
               productId={product.id}
@@ -186,6 +192,7 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
               slug={product.slug}
               currency={product.currency}
               total={total}
+              language={language}
               customPrice={flexiblePricing ? customPriceInCents : undefined}
               disabled={!formValid || paymentStatus === 'processing'}
               buyerName={buyerInfo.name}
@@ -199,7 +206,7 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
               onPaymentFailure={handlePaymentFailure}
             />
             <div className="border-t border-border pt-6 space-y-2">
-              {['Made in Italy · Europe', 'Free returns within 30 days', 'Encrypted secure checkout'].map((text) => (
+              {[copy.madeInItaly, copy.freeReturns, copy.encryptedCheckout].map((text) => (
                 <div key={text} className="flex items-center gap-2">
                   <span className="w-1 h-1 bg-muted-foreground rounded-full flex-shrink-0" />
                   <p className="font-sans text-xs text-muted-foreground">{text}</p>

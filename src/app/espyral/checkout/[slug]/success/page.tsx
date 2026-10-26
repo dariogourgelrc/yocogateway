@@ -10,10 +10,10 @@ export default async function EspyralSuccessPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ order_id?: string }>;
+  searchParams: Promise<{ order_id?: string; lang?: string }>;
 }) {
   const { slug } = await params;
-  const { order_id } = await searchParams;
+  const { order_id, lang } = await searchParams;
 
   let product;
   try {
@@ -32,5 +32,5 @@ export default async function EspyralSuccessPage({
     }
   }
 
-  return <EspyralSuccessContent productName={product.name} buyerEmail={buyerEmail} />;
+  return <EspyralSuccessContent productName={product.name} buyerEmail={buyerEmail} language={lang === 'pt' ? 'pt' : lang === 'en' ? 'en' : product.checkout_language} />;
 }

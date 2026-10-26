@@ -1,5 +1,6 @@
 import type { OrderBump } from '@/lib/supabase/types';
 import { EspyralOrderBumpCard } from './espyral-order-bump-card';
+import { getCheckoutCopy, type CheckoutLanguage } from '@/lib/i18n/checkout-copy';
 
 interface Props {
   product: {
@@ -13,14 +14,16 @@ interface Props {
   selectedBumps: Set<string>;
   total: number;
   formValid: boolean;
+  language: CheckoutLanguage;
   onToggleBump: (id: string) => void;
 }
 
-function formatPrice(cents: number, currency: string) {
-  return new Intl.NumberFormat('en-ZA', { style: 'currency', currency, minimumFractionDigits: 2 }).format(cents / 100);
+function formatPrice(cents: number, currency: string, language: CheckoutLanguage) {
+  return new Intl.NumberFormat(language === 'pt' ? 'pt-PT' : 'en-ZA', { style: 'currency', currency, minimumFractionDigits: 2 }).format(cents / 100);
 }
 
-export function EspyralProductPanel({ product, selectedBumps, total, formValid, onToggleBump }: Props) {
+export function EspyralProductPanel({ product, selectedBumps, total, formValid, onToggleBump, language }: Props) {
+  const copy = getCheckoutCopy(language);
   return (
     <div className="space-y-6">
       {/* Product image */}
@@ -44,14 +47,14 @@ export function EspyralProductPanel({ product, selectedBumps, total, formValid, 
 
       {/* Price */}
       <div className="flex items-center justify-between border-t border-border pt-4">
-        <span className="font-sans text-xs tracking-[0.2em] uppercase text-muted-foreground">Product</span>
-        <span className="font-sans text-sm text-foreground">{formatPrice(product.price, product.currency)}</span>
+        <span className="font-sans text-xs tracking-[0.2em] uppercase text-muted-foreground">{copy.product}</span>
+        <span className="font-sans text-sm text-foreground">{formatPrice(product.price, product.currency, language)}</span>
       </div>
 
       {/* Order bumps — shown after form is valid */}
       {product.order_bumps.length > 0 && formValid && (
         <div className="space-y-3">
-          <p className="font-sans text-xs tracking-[0.2em] uppercase text-foreground">Add to your order</p>
+          <p className="font-sans text-xs tracking-[0.2em] uppercase text-foreground">{copy.addToOrder}</p>
           {product.order_bumps.map((bump) => (
             <EspyralOrderBumpCard
               key={bump.id}
@@ -59,6 +62,7 @@ export function EspyralProductPanel({ product, selectedBumps, total, formValid, 
               currency={product.currency}
               checked={selectedBumps.has(bump.id)}
               onToggle={onToggleBump}
+              language={language}
             />
           ))}
         </div>
@@ -66,8 +70,8 @@ export function EspyralProductPanel({ product, selectedBumps, total, formValid, 
 
       {/* Total */}
       <div className="flex items-center justify-between border-t border-foreground pt-4">
-        <span className="font-serif text-base text-foreground">Total</span>
-        <span className="font-serif text-lg text-foreground">{formatPrice(total, product.currency)}</span>
+        <span className="font-serif text-base text-foreground">{copy.total}</span>
+        <span className="font-serif text-lg text-foreground">{formatPrice(total, product.currency, language)}</span>
       </div>
     </div>
   );

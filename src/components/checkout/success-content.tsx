@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { getCheckoutCopy, normalizeCheckoutLanguage, type CheckoutLanguage } from "@/lib/i18n/checkout-copy";
 
 declare global {
   interface Window {
@@ -18,6 +19,7 @@ declare global {
 
 interface SuccessContentProps {
   productName: string;
+  language?: CheckoutLanguage;
   pixelIds: string[];
   orderData: {
     orderId: string;
@@ -29,9 +31,11 @@ interface SuccessContentProps {
 
 export function SuccessContent({
   productName,
+  language = "en",
   pixelIds,
   orderData,
 }: SuccessContentProps) {
+  const copy = getCheckoutCopy(normalizeCheckoutLanguage(language));
   useEffect(() => {
     if (pixelIds.length === 0 || !orderData) return;
 
@@ -100,14 +104,13 @@ export function SuccessContent({
           </svg>
         </div>
         <h1 className="text-2xl font-bold text-gray-900">
-          Payment confirmed!
+          {copy.confirmedPayment}
         </h1>
         <p className="mt-2 text-gray-600">
-          Thank you for purchasing <strong>{productName}</strong>.
+          {copy.thankYouFor} <strong>{productName}</strong>.
         </p>
         <p className="mt-4 text-sm text-gray-500">
-          Check your email for access to your product. You will also receive a
-          confirmation on WhatsApp.
+          {copy.emailAccess}
         </p>
       </div>
     </div>

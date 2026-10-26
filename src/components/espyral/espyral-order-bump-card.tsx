@@ -1,18 +1,20 @@
 'use client';
 import type { OrderBump } from '@/lib/supabase/types';
+import type { CheckoutLanguage } from '@/lib/i18n/checkout-copy';
 
 interface Props {
   bump: OrderBump;
   currency: string;
   checked: boolean;
   onToggle: (id: string) => void;
+  language: CheckoutLanguage;
 }
 
-function formatPrice(cents: number, currency: string) {
-  return new Intl.NumberFormat('en-ZA', { style: 'currency', currency, minimumFractionDigits: 2 }).format(cents / 100);
+function formatPrice(cents: number, currency: string, language: CheckoutLanguage) {
+  return new Intl.NumberFormat(language === 'pt' ? 'pt-PT' : 'en-ZA', { style: 'currency', currency, minimumFractionDigits: 2 }).format(cents / 100);
 }
 
-export function EspyralOrderBumpCard({ bump, currency, checked, onToggle }: Props) {
+export function EspyralOrderBumpCard({ bump, currency, checked, onToggle, language }: Props) {
   return (
     <label className={`flex gap-4 p-4 border cursor-pointer transition-colors ${checked ? 'border-foreground bg-cream/30' : 'border-border hover:border-foreground/40'}`}>
       <input
@@ -33,7 +35,7 @@ export function EspyralOrderBumpCard({ bump, currency, checked, onToggle }: Prop
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <p className="font-serif text-sm text-foreground">{bump.name}</p>
-          <span className="font-sans text-sm text-foreground flex-shrink-0">{formatPrice(bump.price, currency)}</span>
+          <span className="font-sans text-sm text-foreground flex-shrink-0">{formatPrice(bump.price, currency, language)}</span>
         </div>
         {bump.description && (
           <p className="font-sans text-xs text-muted-foreground mt-1 leading-relaxed">{bump.description}</p>

@@ -16,6 +16,7 @@ interface CreateSessionParams {
   lineItems?: LineItem[];
   metadata?: Record<string, string>;
   customerEmail?: string;
+  locale?: Stripe.Checkout.SessionCreateParams.Locale;
 }
 
 interface PaymentSession {
@@ -55,7 +56,7 @@ export async function createStripeSession(
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     ui_mode: "embedded",
-    locale: "en",          // always English
+    locale: params.locale || "en",
     payment_method_types: ["card"],
     return_url: params.returnUrl,
     customer_email: params.customerEmail,

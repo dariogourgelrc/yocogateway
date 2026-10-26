@@ -17,6 +17,7 @@ interface CreateProductBody {
   description: string;
   price: number;
   pay_what_you_want?: boolean;
+  checkout_language?: "en" | "pt";
   currency: string;
   image_url: string;
   delivery_url: string;
@@ -54,6 +55,7 @@ export async function POST(request: NextRequest) {
       description: body.description || "",
       price: body.price,
       pay_what_you_want: body.pay_what_you_want ?? false,
+      checkout_language: body.checkout_language === "pt" ? "pt" : "en",
       currency: body.currency,
       image_url: body.image_url || "",
       delivery_url: body.delivery_url || "",

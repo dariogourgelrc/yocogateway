@@ -36,6 +36,9 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
   const [payWhatYouWant, setPayWhatYouWant] = useState(
     initialData?.pay_what_you_want || false
   );
+  const [checkoutLanguage, setCheckoutLanguage] = useState<"en" | "pt">(
+    initialData?.checkout_language === "pt" ? "pt" : "en"
+  );
   const [currency, setCurrency] = useState(initialData?.currency || "NAD");
   const [imageUrl, setImageUrl] = useState(initialData?.image_url || "");
   const [deliveryUrl, setDeliveryUrl] = useState(
@@ -160,6 +163,7 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
       description,
       price: Math.round(parseFloat(price || "0") * 100),
       pay_what_you_want: payWhatYouWant,
+      checkout_language: checkoutLanguage,
       currency,
       image_url: imageUrl,
       delivery_url: productType === "digital" ? deliveryUrl : "",
@@ -363,6 +367,22 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
               </span>
             </span>
           </label>
+
+          <div className="max-w-sm">
+            <Label htmlFor="checkout-language">Checkout language</Label>
+            <select
+              id="checkout-language"
+              value={checkoutLanguage}
+              onChange={(e) => setCheckoutLanguage(e.target.value as "en" | "pt")}
+              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1"
+            >
+              <option value="en">English</option>
+              <option value="pt">Português</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Buyers can change this language on the checkout page.
+            </p>
+          </div>
 
           {/* Regional Pricing */}
           <div className="border-t border-gray-100 pt-4 mt-2">

@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import { getCheckoutCopy, type CheckoutLanguage } from "@/lib/i18n/checkout-copy";
 
 export interface BuyerInfo {
   name: string;
@@ -10,18 +11,20 @@ interface BuyerFormProps {
   value: BuyerInfo;
   onChange: (info: BuyerInfo) => void;
   errors?: Partial<Record<keyof BuyerInfo, string>>;
+  language?: CheckoutLanguage;
 }
 
-export function BuyerForm({ value, onChange, errors }: BuyerFormProps) {
+export function BuyerForm({ value, onChange, errors, language = "en" }: BuyerFormProps) {
+  const copy = getCheckoutCopy(language);
   const update = (field: keyof BuyerInfo, val: string) => {
     onChange({ ...value, [field]: val });
   };
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900">Your details</h2>
+      <h2 className="text-lg font-semibold text-gray-900">{copy.details}</h2>
       <Input
-        label="Full name"
+        label={copy.fullName}
         value={value.name}
         onChange={(e) => update("name", e.target.value)}
         placeholder="John Doe"
@@ -29,7 +32,7 @@ export function BuyerForm({ value, onChange, errors }: BuyerFormProps) {
         required
       />
       <Input
-        label="Email"
+        label={copy.email}
         type="email"
         value={value.email}
         onChange={(e) => update("email", e.target.value)}
@@ -38,7 +41,7 @@ export function BuyerForm({ value, onChange, errors }: BuyerFormProps) {
         required
       />
       <Input
-        label="Phone"
+        label={copy.phone}
         type="tel"
         value={value.phone}
         onChange={(e) => update("phone", e.target.value)}

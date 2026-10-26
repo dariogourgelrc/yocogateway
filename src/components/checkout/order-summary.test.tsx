@@ -11,6 +11,7 @@ const mockProduct: Product = {
   description: "",
   price: 5000,
   pay_what_you_want: false,
+  checkout_language: "en",
   currency: "NAD",
   image_url: "https://example.com/img.jpg",
   delivery_url: "",

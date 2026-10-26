@@ -1,4 +1,5 @@
 "use client";
+import { getCheckoutCopy, type CheckoutLanguage } from "@/lib/i18n/checkout-copy";
 
 export interface ShippingInfo {
   address_line: string;
@@ -10,19 +11,21 @@ export interface ShippingInfo {
 interface ShippingFormProps {
   value: ShippingInfo;
   onChange: (value: ShippingInfo) => void;
+  language?: CheckoutLanguage;
 }
 
-export function ShippingForm({ value, onChange }: ShippingFormProps) {
+export function ShippingForm({ value, onChange, language = "en" }: ShippingFormProps) {
+  const copy = getCheckoutCopy(language);
   const set = (field: keyof ShippingInfo) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     onChange({ ...value, [field]: e.target.value });
 
   return (
     <div className="space-y-3">
-      <p className="text-sm font-semibold text-gray-900">Shipping address</p>
+      <p className="text-sm font-semibold text-gray-900">{copy.shippingAddress}</p>
 
       <input
         type="text"
-        placeholder="Address (street and number)"
+        placeholder={copy.addressLine}
         value={value.address_line}
         onChange={set("address_line")}
         required
@@ -32,7 +35,7 @@ export function ShippingForm({ value, onChange }: ShippingFormProps) {
       <div className="grid grid-cols-2 gap-3">
         <input
           type="text"
-          placeholder="City"
+          placeholder={copy.city}
           value={value.city}
           onChange={set("city")}
           required
@@ -40,7 +43,7 @@ export function ShippingForm({ value, onChange }: ShippingFormProps) {
         />
         <input
           type="text"
-          placeholder="ZIP / Postal code"
+          placeholder={copy.postalCode}
           value={value.postal_code}
           onChange={set("postal_code")}
           required
@@ -50,7 +53,7 @@ export function ShippingForm({ value, onChange }: ShippingFormProps) {
 
       <input
         type="text"
-        placeholder="Country"
+        placeholder={copy.country}
         value={value.country}
         onChange={set("country")}
         required

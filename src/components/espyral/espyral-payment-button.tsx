@@ -2,6 +2,7 @@
 import { useCallback, useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js';
+import { getCheckoutCopy, type CheckoutLanguage } from '@/lib/i18n/checkout-copy';
 
 interface Props {
   productId: string;
@@ -10,6 +11,7 @@ interface Props {
   currency: string;
   total: number;
   customPrice?: number;
+  language: CheckoutLanguage;
   disabled: boolean;
   buyerName: string;
   buyerEmail: string;
@@ -28,6 +30,7 @@ export function EspyralPaymentButton({
   slug,
   currency,
   customPrice,
+  language,
   disabled,
   buyerName,
   buyerEmail,
@@ -38,6 +41,7 @@ export function EspyralPaymentButton({
   onPaymentStart,
   onPaymentFailure,
 }: Props) {
+  const copy = getCheckoutCopy(language);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [stripePromise, setStripePromise] = useState<ReturnType<typeof loadStripe> | null>(null);
   const [loading, setLoading] = useState(false);
@@ -62,8 +66,9 @@ export function EspyralPaymentButton({
           tracking_params: { ...trackingParams, event_id: eventId },
           currency,
           custom_price: customPrice,
+          language,
           // Tell the API to use the Espyral success page URL
-          success_path_prefix: `/espyral/checkout/${slug}/success`,
+          success_path_prefix: `/espyral/checkout/${slug}/success?lang=${language}`,
         }),
       });
 
@@ -81,7 +86,7 @@ export function EspyralPaymentButton({
       onPaymentFailure(message);
       setLoading(false);
     }
-  }, [productId, offerId, currency, customPrice, slug, buyerName, buyerEmail, buyerPhone, selectedBumpIds, trackingParams, eventId, onPaymentStart, onPaymentFailure]);
+  }, [productId, offerId, currency, customPrice, language, slug, buyerName, buyerEmail, buyerPhone, selectedBumpIds, trackingParams, eventId, onPaymentStart, onPaymentFailure]);
 
   if (clientSecret && stripePromise) {
     return (
@@ -104,19 +109,19 @@ export function EspyralPaymentButton({
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            Processing...
+            {copy.processing}
           </>
         ) : (
-          'Complete Purchase'
+          copy.completeYourPurchase
         )}
       </button>
       {error && (
         <div className="border border-red-200 bg-red-50 p-3 text-sm font-sans text-red-700">
-          {error}
+          {copy.paymentFailed}
         </div>
       )}
       <p className="text-center text-xs font-sans text-muted-foreground tracking-wider">
-        Secured by Stripe · Encrypted checkout
+        {copy.securedByStripe}
       </p>
     </div>
   );

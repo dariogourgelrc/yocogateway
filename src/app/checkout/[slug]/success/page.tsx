@@ -10,10 +10,10 @@ export default async function SuccessPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ order_id?: string }>;
+  searchParams: Promise<{ order_id?: string; lang?: string }>;
 }) {
   const { slug } = await params;
-  const { order_id } = await searchParams;
+  const { order_id, lang } = await searchParams;
 
   let product;
   try {
@@ -58,6 +58,7 @@ export default async function SuccessPage({
   return (
     <SuccessContent
       productName={product.name}
+      language={lang === "pt" ? "pt" : lang === "en" ? "en" : product.checkout_language}
       pixelIds={pixelIds}
       orderData={orderData}
     />

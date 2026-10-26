@@ -37,6 +37,7 @@ export async function POST(
       description: source.description,
       price: source.price,
       pay_what_you_want: source.pay_what_you_want,
+      checkout_language: source.checkout_language,
       currency: source.currency,
       image_url: source.image_url,
       delivery_url: source.delivery_url,

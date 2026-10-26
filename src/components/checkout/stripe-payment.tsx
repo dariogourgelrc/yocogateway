@@ -9,6 +9,7 @@ import {
 import { WhopCheckoutEmbed } from "@whop/checkout/react";
 import { Button } from "@/components/ui/button";
 import type { ShippingInfo } from "./shipping-form";
+import { getCheckoutCopy, type CheckoutLanguage } from "@/lib/i18n/checkout-copy";
 
 interface StripePaymentProps {
   productId: string;
@@ -16,6 +17,7 @@ interface StripePaymentProps {
   productName: string;
   total: number;
   customPrice?: number;
+  language?: CheckoutLanguage;
   currency: string;
   slug: string;
   upsellUrl: string | null;
@@ -36,8 +38,10 @@ interface StripePaymentProps {
 export function StripePayment({
   productId,
   offerId,
+  slug,
   total,
   customPrice,
+  language = "en",
   currency,
   disabled,
   autoLoad,
@@ -52,6 +56,7 @@ export function StripePayment({
   onPaymentSuccess,
   onPaymentFailure,
 }: StripePaymentProps) {
+  const copy = getCheckoutCopy(language);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [stripePromise, setStripePromise] = useState<ReturnType<typeof loadStripe> | null>(null);
   const [whopSession, setWhopSession] = useState<{ sessionId: string; orderId: string } | null>(null);
@@ -95,6 +100,8 @@ export function StripePayment({
           tracking_params: { ...trackingParams, event_id: eventId },
           currency,
           custom_price: customPrice,
+          language,
+          success_path_prefix: `/checkout/${slug}/success?lang=${language}`,
         }),
       });
 
@@ -114,15 +121,17 @@ export function StripePayment({
       setClientSecret(data.client_secret);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Payment failed";
-      setError(message);
+      setError(copy.paymentFailed);
       onPaymentFailure(message);
       setLoading(false);
     }
   }, [
     productId,
     offerId,
+    slug,
     currency,
     customPrice,
+    language,
     buyerName,
     buyerEmail,
     buyerPhone,
@@ -169,7 +178,7 @@ export function StripePayment({
             onPaymentFailure(message);
           }}
         />
-        <p className="text-center text-xs text-gray-400">Secured by Whop</p>
+        <p className="text-center text-xs text-gray-400">{copy.securedByWhop}</p>
       </div>
     );
   }
@@ -184,7 +193,7 @@ export function StripePayment({
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            Loading payment...
+            {copy.loadingPayment}
           </div>
         )}
         {error && (
@@ -194,11 +203,11 @@ export function StripePayment({
               onClick={handlePay}
               className="mt-2 block w-full rounded bg-red-100 py-1.5 text-xs font-medium text-red-800 hover:bg-red-200"
             >
-              Try again
+              {copy.tryAgain}
             </button>
           </div>
         )}
-        <p className="text-center text-xs text-gray-400">Secured by Stripe</p>
+        <p className="text-center text-xs text-gray-400">{copy.securedByStripe}</p>
       </div>
     );
   }
@@ -232,10 +241,10 @@ export function StripePayment({
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
               />
             </svg>
-            Processing...
+            {copy.processing}
           </span>
         ) : (
-          "Complete purchase"
+          copy.completePurchase
         )}
       </Button>
 
@@ -246,7 +255,7 @@ export function StripePayment({
       )}
 
       <p className="text-center text-xs text-gray-400">
-        Secured by Stripe
+        {copy.securedByStripe}
       </p>
     </div>
   );

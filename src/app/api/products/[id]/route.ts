@@ -29,6 +29,7 @@ interface UpdateProductBody {
   description?: string;
   price?: number;
   pay_what_you_want?: boolean;
+  checkout_language?: "en" | "pt";
   currency?: string;
   image_url?: string;
   delivery_url?: string;
@@ -81,6 +82,8 @@ export async function PUT(
     if (body.price !== undefined) productUpdates.price = body.price;
     if (body.pay_what_you_want !== undefined)
       productUpdates.pay_what_you_want = body.pay_what_you_want;
+    if (body.checkout_language !== undefined)
+      productUpdates.checkout_language = body.checkout_language === "pt" ? "pt" : "en";
     if (body.currency !== undefined) productUpdates.currency = body.currency;
     if (body.image_url !== undefined) productUpdates.image_url = body.image_url;
     if (body.delivery_url !== undefined) productUpdates.delivery_url = body.delivery_url;
