@@ -36,8 +36,10 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
   const [payWhatYouWant, setPayWhatYouWant] = useState(
     initialData?.pay_what_you_want || false
   );
-  const [checkoutLanguage, setCheckoutLanguage] = useState<"en" | "pt">(
-    initialData?.checkout_language === "pt" ? "pt" : "en"
+  const [checkoutLanguage, setCheckoutLanguage] = useState<"en" | "pt" | "es">(
+    initialData?.checkout_language === "pt" || initialData?.checkout_language === "es"
+      ? initialData.checkout_language
+      : "en"
   );
   const [currency, setCurrency] = useState(initialData?.currency || "NAD");
   const [imageUrl, setImageUrl] = useState(initialData?.image_url || "");
@@ -54,6 +56,7 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
     return {
       ZAR: rp.ZAR ? (rp.ZAR / 100).toFixed(2) : "",
       BWP: rp.BWP ? (rp.BWP / 100).toFixed(2) : "",
+      USD: rp.USD ? (rp.USD / 100).toFixed(2) : "",
     };
   });
 
@@ -347,6 +350,7 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
               >
                 <option value="NAD">NAD (Namibian Dollar)</option>
                 <option value="ZAR">ZAR (South African Rand)</option>
+                <option value="USD">USD (US Dollar)</option>
               </select>
             </div>
           </div>
@@ -363,7 +367,7 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
                 Deixar o comprador escolher o preço
               </span>
               <span className="mt-1 block text-xs text-gray-500">
-                O valor acima será sugerido no checkout. O mínimo permitido é 2,00 na moeda selecionada.
+                O valor inicial será preenchido no checkout. Valores abaixo de 2,00 não serão aceitos.
               </span>
             </span>
           </label>
@@ -373,11 +377,12 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
             <select
               id="checkout-language"
               value={checkoutLanguage}
-              onChange={(e) => setCheckoutLanguage(e.target.value as "en" | "pt")}
+              onChange={(e) => setCheckoutLanguage(e.target.value as "en" | "pt" | "es")}
               className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1"
             >
               <option value="en">English</option>
               <option value="pt">Português</option>
+              <option value="es">Español</option>
             </select>
             <p className="mt-1 text-xs text-gray-500">
               Buyers can change this language on the checkout page.
@@ -408,6 +413,15 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
                 value={regionalPricing.BWP}
                 onChange={(e) => setRegionalPricing({ ...regionalPricing, BWP: e.target.value })}
                 placeholder="129.99"
+              />
+              <Input
+                label="USD Price (United States)"
+                type="number"
+                min={0}
+                step="0.01"
+                value={regionalPricing.USD}
+                onChange={(e) => setRegionalPricing({ ...regionalPricing, USD: e.target.value })}
+                placeholder="149.99"
               />
             </div>
           </div>

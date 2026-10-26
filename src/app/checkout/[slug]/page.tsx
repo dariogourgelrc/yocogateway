@@ -10,6 +10,7 @@ const COUNTRY_CURRENCY: Record<string, string> = {
   NA: "NAD", // Namibia
   ZA: "ZAR", // South Africa
   BW: "BWP", // Botswana
+  US: "USD", // United States
 };
 
 export const dynamic = "force-dynamic";

@@ -58,7 +58,7 @@ export default async function SuccessPage({
   return (
     <SuccessContent
       productName={product.name}
-      language={lang === "pt" ? "pt" : lang === "en" ? "en" : product.checkout_language}
+      language={lang === "pt" || lang === "es" ? lang : lang === "en" ? "en" : product.checkout_language}
       pixelIds={pixelIds}
       orderData={orderData}
     />

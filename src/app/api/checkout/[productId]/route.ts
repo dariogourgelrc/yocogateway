@@ -265,7 +265,7 @@ export async function POST(
         currency: activeCurrency,
         returnUrl,
         customerEmail: buyerEmail,
-        locale: body.language === "pt" ? "pt-BR" : "en",
+        locale: body.language === "pt" ? "pt-BR" : body.language === "es" ? "es-419" : "en",
         lineItems,
         metadata: { orderId: order.id },
       });

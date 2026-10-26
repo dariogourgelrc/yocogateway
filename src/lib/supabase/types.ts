@@ -18,7 +18,7 @@ export interface Product {
   description: string;
   price: number; // cents
   pay_what_you_want: boolean;
-  checkout_language: "en" | "pt";
+  checkout_language: "en" | "pt" | "es";
   currency: string; // "NAD", "ZAR"
   image_url: string;
   delivery_url: string;
@@ -177,7 +177,7 @@ export interface CreateOrderRequest {
   offer_id?: string; // if purchasing via an offer slug
   currency?: string; // regional pricing override (e.g. "ZAR", "BWP")
   custom_price?: number; // buyer-selected product price in cents
-  language?: "en" | "pt";
+  language?: "en" | "pt" | "es";
   buyer_name: string;
   buyer_email: string;
   buyer_phone: string;

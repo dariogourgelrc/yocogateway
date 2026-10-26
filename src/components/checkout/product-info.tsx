@@ -1,10 +1,13 @@
 import type { Product } from "@/lib/supabase/types";
+import { formatCurrency } from "@/lib/utils/currency";
+import type { CheckoutLanguage } from "@/lib/i18n/checkout-copy";
 
 interface ProductInfoProps {
   product: Product;
+  language?: CheckoutLanguage;
 }
 
-export function ProductInfo({ product }: ProductInfoProps) {
+export function ProductInfo({ product, language = "en" }: ProductInfoProps) {
   const showDescription =
     product.description && product.description.trim() !== "" &&
     product.description !== product.name;
@@ -20,6 +23,11 @@ export function ProductInfo({ product }: ProductInfoProps) {
           />
           <h1 className="text-lg font-bold text-gray-900">{product.name}</h1>
         </div>
+        {!product.pay_what_you_want && (
+          <p className="mt-1 text-sm font-semibold text-gray-900">
+            {formatCurrency(product.price, product.currency, language)}
+          </p>
+        )}
         {showDescription && (
           <p className="mt-1 text-sm text-gray-500 line-clamp-2">
             {product.description}

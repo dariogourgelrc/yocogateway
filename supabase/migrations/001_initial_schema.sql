@@ -17,7 +17,7 @@ create table products (
   description text not null default '',
   price integer not null check (price >= 0),
   pay_what_you_want boolean not null default false,
-  checkout_language text not null default 'en' check (checkout_language in ('en', 'pt')),
+  checkout_language text not null default 'en' check (checkout_language in ('en', 'pt', 'es')),
   currency text not null default 'NAD',
   image_url text not null default '',
   delivery_url text not null default '',

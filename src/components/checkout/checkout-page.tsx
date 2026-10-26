@@ -12,6 +12,7 @@ import { useTracker } from "@/hooks/use-tracker";
 import { extractUtmParams } from "@/lib/trackers/utm";
 import { generateEventId } from "@/lib/utils/event-id";
 import { getCheckoutCopy, normalizeCheckoutLanguage, type CheckoutLanguage } from "@/lib/i18n/checkout-copy";
+import { getCurrencySymbol } from "@/lib/utils/currency";
 import type {
   ProductWithBumpsAndTrackers,
   TrackingParams,
@@ -22,6 +23,7 @@ const CURRENCY_OPTIONS = [
   { code: "NAD", label: "N$ — Namibia" },
   { code: "ZAR", label: "R — South Africa" },
   { code: "BWP", label: "P — Botswana" },
+  { code: "USD", label: "US$ — United States" },
 ];
 
 interface CheckoutPageProps {
@@ -43,7 +45,9 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
 
   // Always use detected currency — same price number, just different currency symbol.
   // If regional_pricing has a specific price for that currency, use it; otherwise keep base price.
-  const initialCurrency = detectedCurrency || initialProduct.currency;
+  const initialCurrency = detectedCurrency && (
+    detectedCurrency === initialProduct.currency || initialProduct.regional_pricing?.[detectedCurrency] != null
+  ) ? detectedCurrency : initialProduct.currency;
   const [language, setLanguage] = useState<CheckoutLanguage>(
     normalizeCheckoutLanguage(searchParams?.get("lang") || initialProduct.checkout_language)
   );
@@ -58,14 +62,19 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
     : initialProduct.regional_pricing?.[activeCurrency] ?? initialProduct.price;
   const flexiblePricing = initialProduct.pay_what_you_want && !offerId;
   const [customPrice, setCustomPrice] = useState((activePrice / 100).toFixed(2));
+  const [customPriceTouched, setCustomPriceTouched] = useState(false);
 
   useEffect(() => {
     setCustomPrice((activePrice / 100).toFixed(2));
+    setCustomPriceTouched(false);
   }, [activePrice, activeCurrency]);
 
   const customPriceIsValid = /^\d+(?:\.\d{1,2})?$/.test(customPrice)
     && Number.isFinite(Number(customPrice))
     && Math.round(Number(customPrice) * 100) >= 200;
+  const customPriceIsBelowMinimum = customPrice !== ""
+    && Number.isFinite(Number(customPrice))
+    && Math.round(Number(customPrice) * 100) < 200;
   const customPriceInCents = customPriceIsValid
     ? Math.round(Number(customPrice) * 100)
     : activePrice;
@@ -223,7 +232,7 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
   }, []);
 
   return (
-    <div lang={language === "pt" ? "pt" : "en"} className="min-h-screen bg-gray-50">
+    <div lang={language} className="min-h-screen bg-gray-50">
       {/* Exit intent modal */}
       {showExitIntent && exitIntentOffer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
@@ -290,7 +299,7 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
                 ← Back
               </button>
             )}
-            <ProductInfo product={product} />
+            <ProductInfo product={product} language={language} />
             <div className="mt-3 flex items-center justify-end gap-2">
               <label htmlFor="checkout-language" className="text-xs text-gray-500">{copy.language}:</label>
               <select
@@ -302,6 +311,7 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
               >
                 <option value="en">{copy.english}</option>
                 <option value="pt">{copy.portuguese}</option>
+                <option value="es">{copy.spanish}</option>
               </select>
             </div>
           </div>
@@ -331,11 +341,8 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
               <label htmlFor="custom-product-price" className="mb-1 block text-sm font-medium text-gray-900">
                 {copy.choosePrice}
               </label>
-              <p className="mb-2 text-xs text-gray-500">
-                {copy.suggestedPrice}: {(activePrice / 100).toFixed(2)} {activeCurrency}. {copy.minimum}: 2.00 {activeCurrency}.
-              </p>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-500">{activeCurrency}</span>
+                <span className="text-sm font-medium text-gray-500">{getCurrencySymbol(activeCurrency)}</span>
                 <input
                   id="custom-product-price"
                   type="number"
@@ -344,13 +351,18 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
                   inputMode="decimal"
                   required
                   value={customPrice}
-                  onChange={(e) => setCustomPrice(e.target.value)}
+                  onChange={(e) => {
+                    setCustomPrice(e.target.value);
+                    setCustomPriceTouched(true);
+                  }}
                   className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black"
                 />
               </div>
-              {customPrice !== "" && !customPriceIsValid && (
+              {customPriceTouched && customPriceIsBelowMinimum ? (
+                <p className="mt-1 text-xs text-red-600">{copy.belowMinimum}</p>
+              ) : customPriceTouched && customPrice !== "" && !customPriceIsValid ? (
                 <p className="mt-1 text-xs text-red-600">{copy.invalidPrice}</p>
-              )}
+              ) : null}
             </div>
           )}
 

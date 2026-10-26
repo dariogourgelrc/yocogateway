@@ -32,5 +32,5 @@ export default async function EspyralSuccessPage({
     }
   }
 
-  return <EspyralSuccessContent productName={product.name} buyerEmail={buyerEmail} language={lang === 'pt' ? 'pt' : lang === 'en' ? 'en' : product.checkout_language} />;
+  return <EspyralSuccessContent productName={product.name} buyerEmail={buyerEmail} language={lang === 'pt' || lang === 'es' ? lang : lang === 'en' ? 'en' : product.checkout_language} />;
 }

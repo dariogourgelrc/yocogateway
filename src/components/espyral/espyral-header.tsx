@@ -3,7 +3,7 @@ import type { CheckoutLanguage } from '@/lib/i18n/checkout-copy';
 interface Props {
   language: CheckoutLanguage;
   onLanguageChange: (language: CheckoutLanguage) => void;
-  copy: { language: string; english: string; portuguese: string; espyralAnnouncement: string };
+  copy: { language: string; english: string; portuguese: string; spanish: string; espyralAnnouncement: string };
 }
 
 export function EspyralHeader({ language, onLanguageChange, copy }: Props) {
@@ -33,6 +33,7 @@ export function EspyralHeader({ language, onLanguageChange, copy }: Props) {
             >
               <option value="en">{copy.english}</option>
               <option value="pt">{copy.portuguese}</option>
+              <option value="es">{copy.spanish}</option>
             </select>
           </label>
         </div>

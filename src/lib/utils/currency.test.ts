@@ -17,7 +17,11 @@ describe("formatCurrency", () => {
     expect(formatCurrency(9999, "ZAR")).toBe("R 99.99");
   });
 
-  it("falls back to currency code for unknown currencies", () => {
-    expect(formatCurrency(500, "USD")).toBe("USD 5.00");
+  it("formats USD with the dollar symbol", () => {
+    expect(formatCurrency(500, "USD")).toBe("$ 5.00");
+  });
+
+  it("formats Spanish decimal separators", () => {
+    expect(formatCurrency(500, "USD", "es")).toBe("$ 5,00");
   });
 });

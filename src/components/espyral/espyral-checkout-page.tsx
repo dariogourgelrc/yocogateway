@@ -9,6 +9,7 @@ import { useTracker } from '@/hooks/use-tracker';
 import { extractUtmParams } from '@/lib/trackers/utm';
 import { generateEventId } from '@/lib/utils/event-id';
 import { getCheckoutCopy, normalizeCheckoutLanguage, type CheckoutLanguage } from '@/lib/i18n/checkout-copy';
+import { getCurrencySymbol } from '@/lib/utils/currency';
 import type { ProductWithBumpsAndTrackers, TrackingParams } from '@/lib/supabase/types';
 
 const CURRENCY_OPTIONS = [
@@ -25,7 +26,7 @@ interface EspyralCheckoutPageProps {
 export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillData }: EspyralCheckoutPageProps) {
   const searchParams = useSearchParams();
   const [language, setLanguage] = useState<CheckoutLanguage>(
-    normalizeCheckoutLanguage(initialProduct.checkout_language)
+    normalizeCheckoutLanguage(searchParams?.get('lang') || initialProduct.checkout_language)
   );
   const copy = getCheckoutCopy(language);
 
@@ -36,14 +37,19 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
     : (initialProduct.regional_pricing?.[activeCurrency] ?? initialProduct.price);
   const flexiblePricing = initialProduct.pay_what_you_want && !offerId;
   const [customPrice, setCustomPrice] = useState((activePrice / 100).toFixed(2));
+  const [customPriceTouched, setCustomPriceTouched] = useState(false);
 
   useEffect(() => {
     setCustomPrice((activePrice / 100).toFixed(2));
+    setCustomPriceTouched(false);
   }, [activePrice, activeCurrency]);
 
   const customPriceIsValid = /^\d+(?:\.\d{1,2})?$/.test(customPrice)
     && Number.isFinite(Number(customPrice))
     && Math.round(Number(customPrice) * 100) >= 200;
+  const customPriceIsBelowMinimum = customPrice !== ''
+    && Number.isFinite(Number(customPrice))
+    && Math.round(Number(customPrice) * 100) < 200;
   const customPriceInCents = customPriceIsValid
     ? Math.round(Number(customPrice) * 100)
     : activePrice;
@@ -124,7 +130,7 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
   }, []);
 
   return (
-    <div lang={language === 'pt' ? 'pt' : 'en'} className="min-h-screen bg-background">
+    <div lang={language} className="min-h-screen bg-background">
       <EspyralHeader language={language} onLanguageChange={setLanguage} copy={copy} />
       <main className="max-w-6xl mx-auto px-6 md:px-10 py-12 md:py-16">
         <div className="h-px bg-gradient-to-r from-[hsl(var(--gold))] via-[hsl(var(--gold))] to-[hsl(var(--gold))] mb-12" />
@@ -165,21 +171,29 @@ export function EspyralCheckoutPage({ product: initialProduct, offerId, prefillD
             {flexiblePricing && (
               <div>
                 <label htmlFor="espyral-custom-price" className="mb-1 block font-sans text-xs tracking-[0.15em] uppercase text-muted-foreground">
-                  {copy.choosePriceEspyral} ({copy.minimumAmount} {activeCurrency})
+                  {copy.choosePriceEspyral}
                 </label>
-                <input
-                  id="espyral-custom-price"
-                  type="number"
-                  min="2"
-                  step="0.01"
-                  inputMode="decimal"
-                  value={customPrice}
-                  onChange={(e) => setCustomPrice(e.target.value)}
-                  className="w-full border border-border bg-background px-4 py-3 font-sans text-sm text-foreground"
-                />
-                {customPrice !== '' && !customPriceIsValid && (
+                <div className="flex items-center border border-border">
+                  <span className="px-4 font-sans text-sm text-muted-foreground">{getCurrencySymbol(activeCurrency)}</span>
+                  <input
+                    id="espyral-custom-price"
+                    type="number"
+                    min="2"
+                    step="0.01"
+                    inputMode="decimal"
+                    value={customPrice}
+                    onChange={(e) => {
+                      setCustomPrice(e.target.value);
+                      setCustomPriceTouched(true);
+                    }}
+                    className="w-full bg-background px-4 py-3 font-sans text-sm text-foreground"
+                  />
+                </div>
+                {customPriceTouched && customPriceIsBelowMinimum ? (
+                  <p className="mt-1 text-xs text-red-700">{copy.belowMinimum}</p>
+                ) : customPriceTouched && customPrice !== '' && !customPriceIsValid ? (
                   <p className="mt-1 text-xs text-red-700">{copy.invalidPrice}</p>
-                )}
+                ) : null}
               </div>
             )}
             <EspyralBuyerForm value={buyerInfo} onChange={setBuyerInfo} language={language} />
