@@ -367,7 +367,7 @@ export function ProductForm({ mode, initialData, offers = [] }: ProductFormProps
                 Deixar o comprador escolher o preço
               </span>
               <span className="mt-1 block text-xs text-gray-500">
-                O valor inicial será preenchido no checkout. Valores abaixo de 2,00 não serão aceitos.
+                Para produtos com valor variável, informe o valor no link do checkout usando o parâmetro amount. O mínimo é 2,00.
               </span>
             </span>
           </label>

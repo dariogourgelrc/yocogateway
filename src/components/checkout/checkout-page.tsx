@@ -62,34 +62,13 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
     ? initialProduct.price
     : initialProduct.regional_pricing?.[activeCurrency] ?? initialProduct.price;
   const flexiblePricing = initialProduct.pay_what_you_want && !offerId;
-  const amountFromUrl = parseCheckoutAmount(searchParams?.get("amount"));
-  const [selectedAmount, setSelectedAmount] = useState<number | "other" | "url" | null>(
-    amountFromUrl !== null ? "url" : null
-  );
-  const [otherAmount, setOtherAmount] = useState("");
-  const [customPriceTouched, setCustomPriceTouched] = useState(false);
-
-  useEffect(() => {
-    setSelectedAmount(amountFromUrl !== null ? "url" : null);
-    setOtherAmount("");
-    setCustomPriceTouched(false);
-  }, [activePrice, activeCurrency, amountFromUrl]);
-
-  const customPriceIsValid = selectedAmount !== null && (
-    selectedAmount === "url" ? amountFromUrl !== null : selectedAmount !== "other" || (
-      /^\d+(?:\.\d{1,2})?$/.test(otherAmount) &&
-      Number.isFinite(Number(otherAmount)) &&
-      Math.round(Number(otherAmount) * 100) >= 200
-    )
-  );
-  const customPriceIsBelowMinimum = selectedAmount === "other" && otherAmount !== ""
-    && Number.isFinite(Number(otherAmount))
-    && Math.round(Number(otherAmount) * 100) < 200;
-  const customPriceInCents = selectedAmount === "url"
-    ? amountFromUrl ?? 0
-    : selectedAmount === "other"
-    ? (customPriceIsValid ? Math.round(Number(otherAmount) * 100) : 0)
-    : typeof selectedAmount === "number" ? selectedAmount * 100 : 0;
+  const amountParam = searchParams?.get("amount");
+  const amountFromUrl = parseCheckoutAmount(amountParam);
+  const customPriceIsValid = amountFromUrl !== null;
+  const customPriceInCents = amountFromUrl ?? 0;
+  const amountIsBelowMinimum = amountParam !== null && /^\d+(?:\.\d{1,2})?$/.test(amountParam)
+    && Number.isFinite(Number(amountParam))
+    && Math.round(Number(amountParam) * 100) < 200;
   const product = {
     ...initialProduct,
     price: flexiblePricing ? customPriceInCents : activePrice,
@@ -354,72 +333,11 @@ export function CheckoutPage({ product: initialProduct, detectedCurrency, offerI
                 <p className="text-sm font-semibold text-gray-900">
                   {getCurrencySymbol(activeCurrency)} {(amountFromUrl / 100).toFixed(2)}
                 </p>
-              ) : <>
-              <p className="mb-3 block text-sm font-medium text-gray-900">
-                {copy.choosePrice}
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                {[2, 5, 10, 25, 50, 100].map((amount) => (
-                  <button
-                    key={amount}
-                    type="button"
-                    aria-pressed={selectedAmount === amount}
-                    onClick={() => {
-                      setSelectedAmount(amount);
-                      setCustomPriceTouched(false);
-                    }}
-                    className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                      selectedAmount === amount
-                        ? "border-black bg-black text-white"
-                        : "border-gray-300 text-gray-700 hover:border-black"
-                    }`}
-                  >
-                    {getCurrencySymbol(activeCurrency)} {amount}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  aria-pressed={selectedAmount === "other"}
-                  onClick={() => {
-                    setSelectedAmount("other");
-                    setCustomPriceTouched(false);
-                  }}
-                  className={`rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                    selectedAmount === "other"
-                      ? "border-black bg-black text-white"
-                      : "border-gray-300 text-gray-700 hover:border-black"
-                  }`}
-                >
-                  {copy.other}
-                </button>
-              </div>
-              {selectedAmount === "other" && (
-                <div className="mt-3 flex items-center gap-2">
-                  <label htmlFor="custom-product-price" className="text-sm font-medium text-gray-500">
-                    {getCurrencySymbol(activeCurrency)}
-                  </label>
-                  <input
-                    id="custom-product-price"
-                    type="number"
-                    min="2"
-                    step="0.01"
-                    inputMode="decimal"
-                    required
-                    value={otherAmount}
-                    onChange={(e) => {
-                      setOtherAmount(e.target.value);
-                      setCustomPriceTouched(true);
-                    }}
-                    className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-black focus:outline-none focus:ring-2 focus:ring-black"
-                  />
-                </div>
+              ) : (
+                <p className="text-sm text-red-600">
+                  {amountIsBelowMinimum ? copy.belowMinimum : amountParam ? copy.invalidPrice : copy.amountRequired}
+                </p>
               )}
-              {customPriceTouched && customPriceIsBelowMinimum ? (
-                <p className="mt-1 text-xs text-red-600">{copy.belowMinimum}</p>
-              ) : customPriceTouched && selectedAmount === "other" && otherAmount !== "" && !customPriceIsValid ? (
-                <p className="mt-1 text-xs text-red-600">{copy.invalidPrice}</p>
-              ) : null}
-              </>}
             </div>
           )}
 
